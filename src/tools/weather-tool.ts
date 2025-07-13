@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import { createTool } from '../tool-system';
+import { createAiSdkTool } from '../ai-sdk-tool-system';
 
 // Input schema for the weather tool
 const WeatherInputSchema = z.object({
     city: z.string().min(1, 'City name is required'),
-    units: z.enum(['celsius', 'fahrenheit']).optional().default('celsius'),
+    units: z.enum(['celsius', 'fahrenheit']).default('celsius'),
 });
 
 // Mock weather data
@@ -85,7 +85,7 @@ async function getWeather(input: z.infer<typeof WeatherInputSchema>) {
     };
 }
 
-export const weatherTool = createTool(
+export const weatherTool = createAiSdkTool(
     'get_weather',
     'Get current weather information for a specific city. Returns temperature, conditions, humidity, and wind speed.',
     WeatherInputSchema,

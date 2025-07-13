@@ -1,14 +1,14 @@
 import { z } from 'zod';
-import { createTool } from '../tool-system';
+import { createAiSdkTool } from '../ai-sdk-tool-system';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
 // Input schema for the file search tool
 const FileSearchInputSchema = z.object({
     pattern: z.string().min(1, 'Search pattern is required'),
-    directory: z.string().optional().default('.'),
-    maxResults: z.number().min(1).max(100).optional().default(20),
-    includeHidden: z.boolean().optional().default(false),
+    directory: z.string().default('.'),
+    maxResults: z.number().min(1).max(100).default(20),
+    includeHidden: z.boolean().default(false),
 });
 
 // File search implementation
@@ -91,7 +91,7 @@ async function searchFiles(input: z.infer<typeof FileSearchInputSchema>) {
     }
 }
 
-export const fileSearchTool = createTool(
+export const fileSearchTool = createAiSdkTool(
     'search_files',
     'Search for files matching a pattern in the specified directory. Supports glob-style patterns with * and ? wildcards.',
     FileSearchInputSchema,

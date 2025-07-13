@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createTool } from '../tool-system';
+import { createAiSdkTool } from '../ai-sdk-tool-system';
 import * as path from 'path';
 
 // Input schema for the current working directory tool (no inputs required)
@@ -28,7 +28,7 @@ async function getCurrentWorkingDirectory(input: z.infer<typeof CwdInputSchema>)
     }
 }
 
-export const cwdTool = createTool(
+export const cwdTool = createAiSdkTool(
     'get_cwd',
     'Get the current working directory. Returns the absolute path of the current working directory along with platform information.',
     CwdInputSchema,

@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import { createTool } from '../tool-system';
+import { createAiSdkTool } from '../ai-sdk-tool-system';
 
 // Input schema for the calculator tool
 const CalculatorInputSchema = z.object({
     expression: z.string().min(1, 'Mathematical expression is required'),
-    precision: z.number().min(0).max(10).optional().default(2),
+    precision: z.number().min(0).max(10).default(2),
 });
 
 // Safe mathematical expression evaluator
@@ -86,7 +86,7 @@ async function calculate(input: z.infer<typeof CalculatorInputSchema>) {
     }
 }
 
-export const calculatorTool = createTool(
+export const calculatorTool = createAiSdkTool(
     'calculate',
     'Perform safe mathematical calculations. Supports basic arithmetic operations (+, -, *, /) and parentheses. Returns the result with specified precision.',
     CalculatorInputSchema,

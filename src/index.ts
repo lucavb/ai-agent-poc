@@ -1,15 +1,15 @@
-import { MCPAgent } from './mcp-agent';
+import { AISdkAgent } from './ai-sdk-agent';
 import { weatherTool, calculatorTool, fileSearchTool, fileReadTool, cwdTool } from './tools';
 import { getFullAgentConfig, printConfig } from './config';
 import * as readline from 'readline';
 
-// Interactive MCP Agent system
+// Interactive AI SDK Agent system
 async function main() {
     // Print configuration from environment variables
     printConfig();
 
     // Create an agent instance using environment configuration
-    const agent = new MCPAgent(getFullAgentConfig());
+    const agent = new AISdkAgent(getFullAgentConfig());
 
     // Register tools
     agent.addTool(weatherTool);
@@ -18,7 +18,7 @@ async function main() {
     agent.addTool(fileReadTool);
     agent.addTool(cwdTool);
 
-    console.log('\n🤖 MCP Agent System initialized');
+    console.log('\n🤖 AI SDK Agent System initialized');
     console.log(
         '📦 Available tools:',
         agent
@@ -106,7 +106,7 @@ async function main() {
 }
 
 // Handle special commands
-async function handleCommand(command: string, agent: MCPAgent, rl: readline.Interface) {
+async function handleCommand(command: string, agent: AISdkAgent, rl: readline.Interface) {
     const cmd = command.toLowerCase();
 
     switch (cmd) {
@@ -164,7 +164,7 @@ if (require.main === module) {
 }
 
 // Export main components for use in other modules
-export { MCPAgent } from './mcp-agent';
+export { AISdkAgent } from './ai-sdk-agent';
 export { LLMClient } from './llm-client';
 export { ToolRegistry, createTool, createSimpleTool } from './tool-system';
 export { MCPServer } from './mcp-server';

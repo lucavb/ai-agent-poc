@@ -1,17 +1,16 @@
 import { z } from 'zod';
-import { createTool } from '../tool-system';
+import { createAiSdkTool } from '../ai-sdk-tool-system';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
 // Input schema for the file read tool
 const FileReadInputSchema = z.object({
     filePath: z.string().min(1, 'File path is required'),
-    encoding: z.enum(['utf8', 'utf16le', 'latin1', 'base64', 'hex']).optional().default('utf8'),
+    encoding: z.enum(['utf8', 'utf16le', 'latin1', 'base64', 'hex']).default('utf8'),
     maxSize: z
         .number()
         .min(1)
         .max(10 * 1024 * 1024)
-        .optional()
         .default(1024 * 1024), // Default 1MB limit
 });
 
@@ -95,7 +94,7 @@ async function readFile(input: z.infer<typeof FileReadInputSchema>) {
     }
 }
 
-export const fileReadTool = createTool(
+export const fileReadTool = createAiSdkTool(
     'read_file',
     'Read the contents of a file. Supports various encodings and includes safety checks for file size and permissions.',
     FileReadInputSchema,
