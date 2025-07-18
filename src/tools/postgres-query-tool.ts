@@ -72,6 +72,13 @@ async function executeSqlQuery(params: z.infer<typeof sqlQuerySchema>) {
         try {
             await client.connect();
             
+            // Print query if verbose mode is enabled
+            if ((global as any).__POSTGRES_VERBOSE__) {
+                console.log(`🐘 [POSTGRES VERBOSE] Executing SQL query (attempt ${attempt + 1}/${maxRetries + 1}):`);
+                console.log(currentQuery.trim());
+                console.log('');
+            }
+            
             const result = await client.query(currentQuery);
             
             // Extract entities from results for context storage
@@ -129,6 +136,11 @@ async function executeSqlQuery(params: z.infer<typeof sqlQuerySchema>) {
                 if (analysis.fixedQuery) {
                     currentQuery = analysis.fixedQuery;
                     console.log(`Attempt ${attempt + 1} failed, trying fixed query: ${currentQuery}`);
+                    if ((global as any).__POSTGRES_VERBOSE__) {
+                        console.log(`🐘 [POSTGRES VERBOSE] Query auto-fixed for retry:`);
+                        console.log(currentQuery.trim());
+                        console.log('');
+                    }
                     continue;
                 } else {
                     // No automatic fix available, but provide detailed error info

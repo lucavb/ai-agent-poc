@@ -70,6 +70,13 @@ async function getDatabaseSchema(params: z.infer<typeof postgresConnectionSchema
             ORDER BY t.table_schema, t.table_name, c.ordinal_position;
         `;
 
+        // Print query if verbose mode is enabled
+        if ((global as any).__POSTGRES_VERBOSE__) {
+            console.log('🐘 [POSTGRES VERBOSE] Executing schema query:');
+            console.log(schemaQuery.trim());
+            console.log('');
+        }
+
         const result = await client.query(schemaQuery);
         
         // Group results by table

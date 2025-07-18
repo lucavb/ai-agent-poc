@@ -9,19 +9,88 @@ import { getFullAgentConfig, printConfig } from './config';
 import { contextManager } from './context-manager';
 import * as readline from 'readline';
 
+// CLI options interface
+interface CliOptions {
+    verbose: boolean;
+    help: boolean;
+}
+
+// Parse command line arguments
+function parseArgs(): CliOptions {
+    const args = process.argv.slice(2);
+    const options: CliOptions = {
+        verbose: false,
+        help: false
+    };
+
+    for (let i = 0; i < args.length; i++) {
+        const arg = args[i];
+        switch (arg) {
+            case '--verbose':
+            case '-v':
+                options.verbose = true;
+                break;
+            case '--help':
+            case '-h':
+                options.help = true;
+                break;
+            default:
+                console.error(`❌ Unknown option: ${arg}`);
+                console.error('Use --help to see available options');
+                process.exit(1);
+        }
+    }
+
+    return options;
+}
+
+// Show help message
+function showHelp(): void {
+    console.log('🤖 AI SDK Agent System');
+    console.log('');
+    console.log('Usage: npm start [options]');
+    console.log('   or: node dist/index.js [options]');
+    console.log('');
+    console.log('Options:');
+    console.log('  -v, --verbose    Enable verbose mode (shows SQL queries before execution)');
+    console.log('  -h, --help       Show this help message');
+    console.log('');
+    console.log('Examples:');
+    console.log('  npm start');
+    console.log('  npm start --verbose');
+    console.log('  node dist/index.js --verbose');
+}
+
 // Interactive AI SDK Agent system
 async function main() {
+    // Parse CLI arguments
+    const cliOptions = parseArgs();
+
+    // Show help if requested
+    if (cliOptions.help) {
+        showHelp();
+        return;
+    }
+
     // Print configuration from environment variables
     printConfig();
+
+    // Show verbose mode status
+    if (cliOptions.verbose) {
+        console.log('🔍 Verbose mode: ENABLED (SQL queries will be displayed)');
+    }
 
     // Create an agent instance using environment configuration
     const agent = new AISdkAgent(getFullAgentConfig());
 
-    // Register tools
+    // Register tools with verbose option
     agent.addTool(contextTool);  // Context tool first for early analysis
     agent.addTool(calculatorTool);
     agent.addTool(postgresSchemaTool);
     agent.addTool(postgresQueryTool);
+
+    // Store verbose option globally for tools to access
+    (global as any).__POSTGRES_VERBOSE__ = cliOptions.verbose;
 
     console.log('\n🤖 AI SDK Agent System initialized');
     console.log(
