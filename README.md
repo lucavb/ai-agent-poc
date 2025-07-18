@@ -115,16 +115,6 @@ const llmClient = new LLMClient({
 
 ## 🔧 Available Tools
 
-### Weather Tool
-
-Provides mock weather data for cities:
-
-```typescript
-agent.addTool(weatherTool);
-
-// Usage: "What's the weather in New York?"
-```
-
 ### Calculator Tool
 
 Performs safe mathematical calculations:
@@ -135,35 +125,67 @@ agent.addTool(calculatorTool);
 // Usage: "Calculate 15 * 3 + 27"
 ```
 
-### File Search Tool
+### PostgreSQL Schema Tool
 
-Searches for files matching patterns:
-
-```typescript
-agent.addTool(fileSearchTool);
-
-// Usage: "Find all .ts files in the current directory"
-```
-
-### File Read Tool
-
-Reads the contents of a file:
+Connects to PostgreSQL database and fetches complete schema information:
 
 ```typescript
-agent.addTool(fileReadTool);
+agent.addTool(postgresSchemaTool);
 
-// Usage: "Read the package.json file"
+// Usage: "Get database schema" (uses .env configuration)
+// Or: "Get database schema from PostgreSQL server myhost database mydb with username admin and password secret"
 ```
 
-### Current Working Directory Tool
+## 🐳 Docker Test Environment
 
-Gets the current working directory:
+For testing the PostgreSQL tool, a Docker Compose setup is provided with a pre-configured PostgreSQL database containing sample data.
 
-```typescript
-agent.addTool(cwdTool);
+### Starting the Test Database
 
-// Usage: "What's the current working directory?"
+```bash
+# Start PostgreSQL with sample data
+docker compose up -d
+
+# Check if database is ready
+docker compose logs postgres
+
+# Stop the database
+docker compose down
+
+# Stop and remove all data
+docker compose down -v
 ```
+
+### Test Database Connection Details
+
+- **Host**: `localhost`
+- **Port**: `5432`
+- **Database**: `testdb`
+- **Username**: `testuser`
+- **Password**: `testpass`
+
+### Sample Test Queries
+
+Once the database is running, you can test the PostgreSQL tool:
+
+**Simple test (uses environment variables):**
+```
+> Get database schema
+> Show me the PostgreSQL schema
+```
+
+**With custom connection parameters:**
+```
+> Get database schema from PostgreSQL server localhost port 5432 database testdb with username testuser and password testpass
+```
+
+The test database includes:
+- 7 tables with realistic e-commerce data
+- Various PostgreSQL data types (SERIAL, VARCHAR, TEXT, DECIMAL, BOOLEAN, TIMESTAMP, UUID, INET)
+- Foreign key relationships and indexes
+- Sample data for users, products, orders, and reviews
+
+See [fixtures/README.md](fixtures/README.md) for detailed information about the test database structure.
 
 ## 🎯 Usage
 
@@ -192,10 +214,11 @@ You'll see an interactive prompt where you can:
 ### Example Queries
 
 ```
-> What's the weather in New York and calculate 15 * 3?
-> Find all TypeScript files in the current directory
-> Get the current working directory and read package.json
-> Calculate (25 + 75) / 2
+> Calculate 15 * 3
+> What is (25 + 75) / 2?
+> Perform the calculation: 100 - 42 + 8
+> Get database schema from PostgreSQL server localhost database testdb
+> Connect to postgres://localhost:5432/testdb with username testuser and password testpass to get schema
 ```
 
 ### Programmatic Usage
@@ -204,19 +227,23 @@ You can also use the agent programmatically:
 
 ```typescript
 import { MCPAgent } from './src/mcp-agent';
-import { weatherTool, calculatorTool } from './src/tools';
+import { calculatorTool, postgresSchemaTool } from './src/tools';
 import { getFullAgentConfig } from './src/config';
 
 // Create agent with environment configuration
 const agent = new MCPAgent(getFullAgentConfig());
 
 // Register tools
-agent.addTool(weatherTool);
 agent.addTool(calculatorTool);
+agent.addTool(postgresSchemaTool);
 
 // Process a query
-const result = await agent.processQuery("What's the weather in Tokyo and calculate 25 + 75?");
+const result = await agent.processQuery("Calculate 25 + 75");
 console.log(result.response);
+
+// Get database schema
+const schemaResult = await agent.processQuery("Get schema from PostgreSQL server localhost port 5432 database testdb with username testuser and password testpass");
+console.log(schemaResult.response);
 ```
 
 ### Multi-step Reasoning

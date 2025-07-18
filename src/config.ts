@@ -2,6 +2,16 @@ import * as dotenv from 'dotenv';
 import { z } from 'zod';
 import { LLMConfig, AgentConfig } from './types';
 
+// PostgreSQL configuration type
+export interface PostgresConfig {
+    host: string;
+    port: number;
+    database: string;
+    username: string;
+    password: string;
+    ssl: boolean;
+}
+
 // Load environment variables
 dotenv.config();
 
@@ -36,6 +46,21 @@ const EnvSchema = z.object({
         .transform((val) => parseInt(val, 10))
         .refine((val) => val > 0, 'Must be a positive number'),
     AGENT_DEBUG: z
+        .string()
+        .default('false')
+        .transform((val) => val.toLowerCase() === 'true'),
+
+    // PostgreSQL Configuration
+    POSTGRES_HOST: z.string().default('localhost'),
+    POSTGRES_PORT: z
+        .string()
+        .default('5432')
+        .transform((val) => parseInt(val, 10))
+        .refine((val) => val > 0 && val <= 65535, 'Must be a valid port number'),
+    POSTGRES_DB: z.string().default('testdb'),
+    POSTGRES_USER: z.string().default('testuser'),
+    POSTGRES_PASSWORD: z.string().default('testpass'),
+    POSTGRES_SSL: z
         .string()
         .default('false')
         .transform((val) => val.toLowerCase() === 'true'),
@@ -111,6 +136,20 @@ export function validateEnvironment(): { valid: boolean; errors: string[] } {
 }
 
 /**
+ * Get PostgreSQL configuration from environment variables
+ */
+export function getPostgresConfig(): PostgresConfig {
+    return {
+        host: envVars.POSTGRES_HOST,
+        port: envVars.POSTGRES_PORT,
+        database: envVars.POSTGRES_DB,
+        username: envVars.POSTGRES_USER,
+        password: envVars.POSTGRES_PASSWORD,
+        ssl: envVars.POSTGRES_SSL,
+    };
+}
+
+/**
  * Print current configuration (without sensitive data)
  */
 export function printConfig(): void {
@@ -126,4 +165,10 @@ export function printConfig(): void {
     console.log(`    Version: ${envVars.AGENT_VERSION}`);
     console.log(`    Max Iterations: ${envVars.AGENT_MAX_ITERATIONS}`);
     console.log(`    Debug: ${envVars.AGENT_DEBUG}`);
+    console.log('  PostgreSQL:');
+    console.log(`    Host: ${envVars.POSTGRES_HOST}`);
+    console.log(`    Port: ${envVars.POSTGRES_PORT}`);
+    console.log(`    Database: ${envVars.POSTGRES_DB}`);
+    console.log(`    User: ${envVars.POSTGRES_USER}`);
+    console.log(`    SSL: ${envVars.POSTGRES_SSL}`);
 }

@@ -24,10 +24,12 @@
         "ai": "4.3.17",
         "dotenv": "17.2.0",
         "node-fetch": "^3.3.2",
+        "pg": "^8.11.3",
         "zod": "3.23.8"
     },
     "devDependencies": {
         "@types/node": "24.0.13",
+        "@types/pg": "^8.10.9",
         "tsx": "^4.6.2",
         "typescript": "^5.3.3"
     }

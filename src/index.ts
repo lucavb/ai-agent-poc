@@ -1,20 +1,7 @@
 import { AISdkAgent } from './ai-sdk-agent';
 import { 
-    weatherTool, 
-    calculatorTool, 
-    fileSearchTool, 
-    fileReadTool, 
-    cwdTool,
-    gitStatusTool,
-    gitDiffTool,
-    gitAddTool,
-    gitCommitTool,
-    gitLogTool,
-    gitBranchTool,
-    gitRemoteTool,
-    gitInitTool,
-    gitShowTool,
-    gitResetTool
+    calculatorTool,
+    postgresSchemaTool
 } from './tools';
 import { getFullAgentConfig, printConfig } from './config';
 import * as readline from 'readline';
@@ -28,23 +15,8 @@ async function main() {
     const agent = new AISdkAgent(getFullAgentConfig());
 
     // Register tools
-    agent.addTool(weatherTool);
     agent.addTool(calculatorTool);
-    agent.addTool(fileSearchTool);
-    agent.addTool(fileReadTool);
-    agent.addTool(cwdTool);
-    
-    // Register git tools
-    agent.addTool(gitStatusTool);
-    agent.addTool(gitDiffTool);
-    agent.addTool(gitAddTool);
-    agent.addTool(gitCommitTool);
-    agent.addTool(gitLogTool);
-    agent.addTool(gitBranchTool);
-    agent.addTool(gitRemoteTool);
-    agent.addTool(gitInitTool);
-    agent.addTool(gitShowTool);
-    agent.addTool(gitResetTool);
+    agent.addTool(postgresSchemaTool);
 
     console.log('\n🤖 AI SDK Agent System initialized');
     console.log(
@@ -146,10 +118,11 @@ async function handleCommand(command: string, agent: AISdkAgent, rl: readline.In
             console.log('  /clear   - Clear the console');
             console.log('  /exit    - Exit the application');
             console.log('\n💡 Example queries:');
-            console.log('  "What\'s the weather in New York and calculate 15 * 3?"');
-            console.log('  "Find all TypeScript files in the current directory"');
-            console.log('  "Get the current working directory and read package.json"');
-            console.log('  "Calculate (25 + 75) / 2"');
+            console.log('  "Calculate 15 * 3"');
+            console.log('  "What is (25 + 75) / 2?"');
+            console.log('  "Perform the calculation: 100 - 42 + 8"');
+            console.log('  "Get database schema"');
+            console.log('  "Show me the PostgreSQL schema"');
             break;
 
         case '/tools':
