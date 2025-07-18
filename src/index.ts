@@ -1,7 +1,8 @@
 import { AISdkAgent } from './ai-sdk-agent';
 import { 
     calculatorTool,
-    postgresSchemaTool
+    postgresSchemaTool,
+    postgresQueryTool
 } from './tools';
 import { getFullAgentConfig, printConfig } from './config';
 import * as readline from 'readline';
@@ -17,6 +18,7 @@ async function main() {
     // Register tools
     agent.addTool(calculatorTool);
     agent.addTool(postgresSchemaTool);
+    agent.addTool(postgresQueryTool);
 
     console.log('\n🤖 AI SDK Agent System initialized');
     console.log(
@@ -123,6 +125,8 @@ async function handleCommand(command: string, agent: AISdkAgent, rl: readline.In
             console.log('  "Perform the calculation: 100 - 42 + 8"');
             console.log('  "Get database schema"');
             console.log('  "Show me the PostgreSQL schema"');
+            console.log('  "Select all users from the database"');
+            console.log('  "Query: SELECT * FROM products WHERE price > 100"');
             break;
 
         case '/tools':
