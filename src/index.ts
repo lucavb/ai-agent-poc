@@ -2,9 +2,11 @@ import { AISdkAgent } from './ai-sdk-agent';
 import { 
     calculatorTool,
     postgresSchemaTool,
-    postgresQueryTool
+    postgresQueryTool,
+    contextTool
 } from './tools';
 import { getFullAgentConfig, printConfig } from './config';
+import { contextManager } from './context-manager';
 import * as readline from 'readline';
 
 // Interactive AI SDK Agent system
@@ -16,6 +18,7 @@ async function main() {
     const agent = new AISdkAgent(getFullAgentConfig());
 
     // Register tools
+    agent.addTool(contextTool);  // Context tool first for early analysis
     agent.addTool(calculatorTool);
     agent.addTool(postgresSchemaTool);
     agent.addTool(postgresQueryTool);
@@ -29,11 +32,13 @@ async function main() {
             .join(', '),
     );
     console.log('\n📝 Commands:');
-    console.log('  /help    - Show this help message');
-    console.log('  /tools   - List available tools');
-    console.log('  /config  - Show current configuration');
-    console.log('  /clear   - Clear the console');
-    console.log('  /exit    - Exit the application');
+                console.log('  /help    - Show this help message');
+            console.log('  /tools   - List available tools');
+            console.log('  /config  - Show current configuration');
+            console.log('  /context - Show conversation context summary');
+            console.log('  /clear   - Clear the console');
+            console.log('  /reset   - Clear conversation context');
+            console.log('  /exit    - Exit the application');
     console.log('\n💬 Enter your query or command:');
 
     // Create readline interface
@@ -127,6 +132,8 @@ async function handleCommand(command: string, agent: AISdkAgent, rl: readline.In
             console.log('  "Show me the PostgreSQL schema"');
             console.log('  "Select all users from the database"');
             console.log('  "Query: SELECT * FROM products WHERE price > 100"');
+            console.log('  "How many orders does user john have?"');
+            console.log('  "Summarize these orders" (uses context analysis first)');
             break;
 
         case '/tools':
@@ -143,9 +150,27 @@ async function handleCommand(command: string, agent: AISdkAgent, rl: readline.In
             console.log(`Max Iterations: ${agent.getConfig().maxIterations}`);
             break;
 
+        case '/context':
+            console.log('\n🧠 Conversation Context:');
+            const summary = contextManager.getContextSummary();
+            console.log(`Total contexts: ${summary.totalContexts}`);
+            console.log('Recent contexts:');
+            summary.recentContexts.forEach((ctx, i) => {
+                console.log(`  ${i + 1}. ${ctx}`);
+            });
+            if (summary.totalContexts === 0) {
+                console.log('  No conversation context yet. Ask some questions to build context!');
+            }
+            break;
+
         case '/clear':
             console.clear();
             console.log('🤖 MCP Agent System - Console cleared');
+            break;
+
+        case '/reset':
+            contextManager.clearContext();
+            console.log('\n🔄 Conversation context cleared');
             break;
 
         case '/exit':
@@ -174,5 +199,6 @@ export { LLMClient } from './llm-client';
 export { ToolRegistry, createTool, createSimpleTool } from './tool-system';
 export { MCPServer } from './mcp-server';
 export { getLLMConfig, getAgentConfig, getFullAgentConfig, printConfig, validateEnvironment } from './config';
+export { contextManager, ConversationContextManager } from './context-manager';
 export * from './types';
 export * from './tools';

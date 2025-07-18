@@ -147,6 +147,48 @@ agent.addTool(postgresQueryTool);
 // Or: "Query: SELECT * FROM products WHERE price > 100"
 ```
 
+### Context Analysis Tool
+
+Analyzes queries for context references and provides tool selection guidance:
+
+```typescript
+agent.addTool(contextTool);
+
+// Usage: Used automatically for early-stage query analysis
+// Helps the AI understand: "summarize these orders" → database query with context
+```
+
+## 🧠 Context-Aware Conversations
+
+The system now maintains conversation context to enable natural follow-up questions using a **two-stage approach**:
+
+### Architecture
+1. **Context Analysis Tool** - Used first to understand query intent and references
+2. **Specialized Tools** - Selected based on context analysis guidance
+
+### Context Features
+- **Early Tool Selection**: Context analysis happens BEFORE tool selection
+- **Reference Resolution**: Resolves "these orders", "his orders", "summarize them" 
+- **Intent Analysis**: Determines if query is database, calculation, or other type
+- **Entity Tracking**: Remembers users, tables, and query results from previous interactions
+- **Tool Guidance**: Provides recommendations for which tools to use next
+
+### Example Multi-Turn Conversation
+```
+> How many orders does user johndoe have?
+→ Step 1: Context Tool analyzes intent (database query) and stores user entity
+→ Step 2: AI selects postgres_query tool based on context guidance
+→ Step 3: Query executes and stores results in context
+→ Result: 3 orders
+
+> Summarize these orders
+→ Step 1: Context Tool detects reference, resolves to "orders for user johndoe" 
+→ Step 2: Context Tool recommends postgres_query tool with high confidence
+→ Step 3: AI understands this is a database query about previous results
+→ Step 4: Query executed with context-enhanced understanding
+→ Result: Summary of johndoe's specific orders
+```
+
 ## 🐳 Docker Test Environment
 
 For testing the PostgreSQL tool, a Docker Compose setup is provided with a pre-configured PostgreSQL database containing sample data.
@@ -191,6 +233,14 @@ Once the database is running, you can test the PostgreSQL tool:
 > Select all users from the database
 > Query: SELECT name, price FROM products WHERE price > 100
 > SELECT u.username, COUNT(o.id) as order_count FROM users u LEFT JOIN orders o ON u.id = o.user_id GROUP BY u.id, u.username
+```
+
+**Context-aware follow-up queries:**
+```
+> How many orders does user johndoe have?
+> Show me these orders
+> Summarize them
+> What products did he order?
 ```
 
 **With custom connection parameters:**

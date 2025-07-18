@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { Client } from 'pg';
 import { createAiSdkTool } from '../ai-sdk-tool-system';
 import { getPostgresConfig } from '../config';
+import { contextManager } from '../context-manager';
 
 // Schema for PostgreSQL connection parameters (all optional, will use env vars as defaults)
 const postgresConnectionSchema = z.object({
@@ -101,10 +102,29 @@ async function getDatabaseSchema(params: z.infer<typeof postgresConnectionSchema
 
         const tablesList = Object.values(tables);
         
+        // Store schema context for future reference
+        const contextId = contextManager.addContext({
+            originalQuery: 'Get database schema',
+            queryType: 'schema',
+            results: {
+                tables: tablesList,
+                total_tables: tablesList.length
+            },
+            entities: {
+                tables: tablesList.map((table: any) => table.table_name)
+            },
+            metadata: {
+                rowCount: tablesList.length,
+                affectedTables: tablesList.map((table: any) => table.table_name),
+                keyFindings: [`Found ${tablesList.length} tables in database`]
+            }
+        });
+        
         return {
             success: true,
             database: config.database,
             host: config.host,
+            context_id: contextId,
             total_tables: tablesList.length,
             tables: tablesList
         };
