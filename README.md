@@ -136,6 +136,17 @@ agent.addTool(postgresSchemaTool);
 // Or: "Get database schema from PostgreSQL server myhost database mydb with username admin and password secret"
 ```
 
+### PostgreSQL Query Tool
+
+Executes SELECT statements with automatic retry and error correction:
+
+```typescript
+agent.addTool(postgresQueryTool);
+
+// Usage: "Select all users from the database"
+// Or: "Query: SELECT * FROM products WHERE price > 100"
+```
+
 ## 🐳 Docker Test Environment
 
 For testing the PostgreSQL tool, a Docker Compose setup is provided with a pre-configured PostgreSQL database containing sample data.
@@ -163,15 +174,23 @@ docker compose down -v
 - **Database**: `testdb`
 - **Username**: `testuser`
 - **Password**: `testpass`
+- **Max Retries**: `3` (configurable via `POSTGRES_MAX_RETRIES`)
 
 ### Sample Test Queries
 
 Once the database is running, you can test the PostgreSQL tool:
 
-**Simple test (uses environment variables):**
+**Schema queries:**
 ```
 > Get database schema
 > Show me the PostgreSQL schema
+```
+
+**Data queries (with automatic retry on errors):**
+```
+> Select all users from the database
+> Query: SELECT name, price FROM products WHERE price > 100
+> SELECT u.username, COUNT(o.id) as order_count FROM users u LEFT JOIN orders o ON u.id = o.user_id GROUP BY u.id, u.username
 ```
 
 **With custom connection parameters:**

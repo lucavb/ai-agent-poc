@@ -10,6 +10,7 @@ export interface PostgresConfig {
     username: string;
     password: string;
     ssl: boolean;
+    maxRetries: number;
 }
 
 // Load environment variables
@@ -64,6 +65,11 @@ const EnvSchema = z.object({
         .string()
         .default('false')
         .transform((val) => val.toLowerCase() === 'true'),
+    POSTGRES_MAX_RETRIES: z
+        .string()
+        .default('3')
+        .transform((val) => parseInt(val, 10))
+        .refine((val) => val >= 0 && val <= 10, 'Must be between 0 and 10'),
 });
 
 // Parse and validate environment variables
@@ -146,6 +152,7 @@ export function getPostgresConfig(): PostgresConfig {
         username: envVars.POSTGRES_USER,
         password: envVars.POSTGRES_PASSWORD,
         ssl: envVars.POSTGRES_SSL,
+        maxRetries: envVars.POSTGRES_MAX_RETRIES,
     };
 }
 
@@ -171,4 +178,5 @@ export function printConfig(): void {
     console.log(`    Database: ${envVars.POSTGRES_DB}`);
     console.log(`    User: ${envVars.POSTGRES_USER}`);
     console.log(`    SSL: ${envVars.POSTGRES_SSL}`);
+    console.log(`    Max Retries: ${envVars.POSTGRES_MAX_RETRIES}`);
 }
