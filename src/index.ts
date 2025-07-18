@@ -1,5 +1,21 @@
 import { AISdkAgent } from './ai-sdk-agent';
-import { weatherTool, calculatorTool, fileSearchTool, fileReadTool, cwdTool } from './tools';
+import { 
+    weatherTool, 
+    calculatorTool, 
+    fileSearchTool, 
+    fileReadTool, 
+    cwdTool,
+    gitStatusTool,
+    gitDiffTool,
+    gitAddTool,
+    gitCommitTool,
+    gitLogTool,
+    gitBranchTool,
+    gitRemoteTool,
+    gitInitTool,
+    gitShowTool,
+    gitResetTool
+} from './tools';
 import { getFullAgentConfig, printConfig } from './config';
 import * as readline from 'readline';
 
@@ -17,6 +33,18 @@ async function main() {
     agent.addTool(fileSearchTool);
     agent.addTool(fileReadTool);
     agent.addTool(cwdTool);
+    
+    // Register git tools
+    agent.addTool(gitStatusTool);
+    agent.addTool(gitDiffTool);
+    agent.addTool(gitAddTool);
+    agent.addTool(gitCommitTool);
+    agent.addTool(gitLogTool);
+    agent.addTool(gitBranchTool);
+    agent.addTool(gitRemoteTool);
+    agent.addTool(gitInitTool);
+    agent.addTool(gitShowTool);
+    agent.addTool(gitResetTool);
 
     console.log('\n🤖 AI SDK Agent System initialized');
     console.log(

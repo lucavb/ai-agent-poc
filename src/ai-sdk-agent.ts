@@ -115,8 +115,16 @@ Always be helpful, accurate, and honest about your capabilities and limitations.
                     this.state.iterations++;
 
                     if (this.config.debug) {
-                        console.log(`\n--- Step ${this.state.iterations} ---`);
-                        console.log('Step:', step);
+                        console.log(`\n--- Step ${this.state.iterations}: ${step.stepType || 'processing'} ---`);
+                        if (step.toolCalls && step.toolCalls.length > 0) {
+                            console.log(
+                                `🔧 Tools: ${step.toolCalls.map((tc: any) => tc.toolName || tc.function?.name || 'unknown').join(', ')}`,
+                            );
+                        }
+                        if (step.text && step.text.length > 0) {
+                            const preview = step.text.length > 100 ? step.text.substring(0, 100) + '...' : step.text;
+                            console.log(`💬 Response: ${preview}`);
+                        }
                     }
 
                     this.state.reasoning.push(`Step ${this.state.iterations}: ${step.stepType || 'processing'}`);
