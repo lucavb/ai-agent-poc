@@ -1,7 +1,8 @@
 import * as dotenv from 'dotenv';
-import { z } from 'zod';
+import { number, z } from 'zod';
 import { LLMConfig, AgentConfig } from './types';
 import * as path from 'path';
+import { objectify } from 'radashi';
 
 // PostgreSQL configuration type
 export interface PostgresConfig {
@@ -16,6 +17,9 @@ export interface PostgresConfig {
 
 // Load environment variables from project root
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+
+const serviceNames = ['CORE', 'EXTERNAL_PARTNER'] as const;
+type ServiceName = (typeof serviceNames)[number];
 
 // Zod schema for environment variables
 const EnvSchema = z.object({
@@ -52,85 +56,56 @@ const EnvSchema = z.object({
         .default('false')
         .transform((val) => val.toLowerCase() === 'true'),
 
-    // PostgreSQL Core Service Database Configuration (new naming)
-    POSTGRES_CORE_SERVICE_HOST: z.string().optional(),
-    POSTGRES_CORE_SERVICE_PORT: z
-        .string()
-        .optional()
-        .transform((val) => (val ? parseInt(val, 10) : undefined))
-        .refine((val) => val === undefined || (val > 0 && val <= 65535), 'Must be a valid port number'),
-    POSTGRES_CORE_SERVICE_DB: z.string().optional(),
-    POSTGRES_CORE_SERVICE_USER: z.string().optional(),
-    POSTGRES_CORE_SERVICE_PASSWORD: z.string().optional(),
-    POSTGRES_CORE_SERVICE_SSL: z
-        .string()
-        .optional()
-        .transform((val) => (val ? val.toLowerCase() === 'true' : undefined)),
-    POSTGRES_CORE_SERVICE_MAX_RETRIES: z
-        .string()
-        .optional()
-        .transform((val) => (val ? parseInt(val, 10) : undefined))
-        .refine((val) => val === undefined || (val >= 0 && val <= 10), 'Must be between 0 and 10'),
-
-    // PostgreSQL External Partner Service Database Configuration (new naming)
-    POSTGRES_EXTERNAL_PARTNER_SERVICE_HOST: z.string().optional(),
-    POSTGRES_EXTERNAL_PARTNER_SERVICE_PORT: z
-        .string()
-        .optional()
-        .transform((val) => (val ? parseInt(val, 10) : undefined))
-        .refine((val) => val === undefined || (val > 0 && val <= 65535), 'Must be a valid port number'),
-    POSTGRES_EXTERNAL_PARTNER_SERVICE_DB: z.string().optional(),
-    POSTGRES_EXTERNAL_PARTNER_SERVICE_USER: z.string().optional(),
-    POSTGRES_EXTERNAL_PARTNER_SERVICE_PASSWORD: z.string().optional(),
-    POSTGRES_EXTERNAL_PARTNER_SERVICE_SSL: z
-        .string()
-        .optional()
-        .transform((val) => (val ? val.toLowerCase() === 'true' : undefined)),
-    POSTGRES_EXTERNAL_PARTNER_SERVICE_MAX_RETRIES: z
-        .string()
-        .optional()
-        .transform((val) => (val ? parseInt(val, 10) : undefined))
-        .refine((val) => val === undefined || (val >= 0 && val <= 10), 'Must be between 0 and 10'),
-
-    // Legacy PostgreSQL Core Service Database Configuration (backward compatibility)
-    POSTGRES_HOST: z.string().optional(),
-    POSTGRES_PORT: z
-        .string()
-        .optional()
-        .transform((val) => (val ? parseInt(val, 10) : undefined))
-        .refine((val) => val === undefined || (val > 0 && val <= 65535), 'Must be a valid port number'),
-    POSTGRES_DB: z.string().optional(),
-    POSTGRES_USER: z.string().optional(),
-    POSTGRES_PASSWORD: z.string().optional(),
-    POSTGRES_SSL: z
-        .string()
-        .optional()
-        .transform((val) => (val ? val.toLowerCase() === 'true' : undefined)),
-    POSTGRES_MAX_RETRIES: z
-        .string()
-        .optional()
-        .transform((val) => (val ? parseInt(val, 10) : undefined))
-        .refine((val) => val === undefined || (val >= 0 && val <= 10), 'Must be between 0 and 10'),
-
-    // Legacy PostgreSQL External Partner Service Database Configuration (backward compatibility)
-    POSTGRES2_HOST: z.string().optional(),
-    POSTGRES2_PORT: z
-        .string()
-        .optional()
-        .transform((val) => (val ? parseInt(val, 10) : undefined))
-        .refine((val) => val === undefined || (val > 0 && val <= 65535), 'Must be a valid port number'),
-    POSTGRES2_DB: z.string().optional(),
-    POSTGRES2_USER: z.string().optional(),
-    POSTGRES2_PASSWORD: z.string().optional(),
-    POSTGRES2_SSL: z
-        .string()
-        .optional()
-        .transform((val) => (val ? val.toLowerCase() === 'true' : undefined)),
-    POSTGRES2_MAX_RETRIES: z
-        .string()
-        .optional()
-        .transform((val) => (val ? parseInt(val, 10) : undefined))
-        .refine((val) => val === undefined || (val >= 0 && val <= 10), 'Must be between 0 and 10'),
+    // PostgreSQL Service Database Configurations
+    ...objectify(
+        serviceNames,
+        (serviceName) => `POSTGRES_${serviceName}_SERVICE_HOST`,
+        () => z.string().optional(),
+    ),
+    ...objectify(
+        serviceNames,
+        (serviceName) => `POSTGRES_${serviceName}_SERVICE_PORT`,
+        () =>
+            z
+                .string()
+                .optional()
+                .transform((val) => (val ? parseInt(val, 10) : undefined))
+                .refine((val) => val === undefined || (val > 0 && val <= 65535), 'Must be a valid port number'),
+    ),
+    ...objectify(
+        serviceNames,
+        (serviceName) => `POSTGRES_${serviceName}_SERVICE_DB`,
+        () => z.string().optional(),
+    ),
+    ...objectify(
+        serviceNames,
+        (serviceName) => `POSTGRES_${serviceName}_SERVICE_USER`,
+        () => z.string().optional(),
+    ),
+    ...objectify(
+        serviceNames,
+        (serviceName) => `POSTGRES_${serviceName}_SERVICE_PASSWORD`,
+        () => z.string().optional(),
+    ),
+    ...objectify(
+        serviceNames,
+        (serviceName) => `POSTGRES_${serviceName}_SERVICE_SSL`,
+        () =>
+            z
+                .string()
+                .optional()
+                .transform((val) => (val ? val.toLowerCase() === 'true' : undefined)),
+    ),
+    ...objectify(
+        serviceNames,
+        (serviceName) => `POSTGRES_${serviceName}_SERVICE_MAX_RETRIES`,
+        () =>
+            z
+                .string()
+                .optional()
+                .transform((val) => (val ? parseInt(val, 10) : undefined))
+                .refine((val) => val === undefined || (val >= 0 && val <= 10), 'Must be between 0 and 10'),
+    ),
 });
 
 // Parse and validate environment variables
@@ -216,92 +191,23 @@ function buildDatabaseRegistry(): DatabaseRegistry {
     const registry = new Map<string, PostgresConfig>();
 
     // Helper function to get config with fallback to legacy variables
-    const getCoreServiceConfig = () => {
-        // Try new naming first, fall back to legacy, then hardcoded defaults
-        const host = envVars.POSTGRES_CORE_SERVICE_HOST ?? envVars.POSTGRES_HOST ?? 'localhost';
-        const port = envVars.POSTGRES_CORE_SERVICE_PORT ?? envVars.POSTGRES_PORT ?? 5432;
-        const database = envVars.POSTGRES_CORE_SERVICE_DB ?? envVars.POSTGRES_DB ?? 'testdb';
-        const username = envVars.POSTGRES_CORE_SERVICE_USER ?? envVars.POSTGRES_USER ?? 'testuser';
-        const password = envVars.POSTGRES_CORE_SERVICE_PASSWORD ?? envVars.POSTGRES_PASSWORD ?? 'testpass';
-        const ssl = envVars.POSTGRES_CORE_SERVICE_SSL ?? envVars.POSTGRES_SSL ?? false;
-        const maxRetries = envVars.POSTGRES_CORE_SERVICE_MAX_RETRIES ?? envVars.POSTGRES_MAX_RETRIES ?? 3;
-
+    const getServiceConfig = (serviceName: ServiceName) => {
+        // Try new naming first, fall back to legacy
+        const host = envVars[`POSTGRES_${serviceName}_SERVICE_HOST`] ?? 'localhost';
+        const port = envVars[`POSTGRES_${serviceName}_SERVICE_PORT`] ?? 5432;
+        const database = envVars[`POSTGRES_${serviceName}_SERVICE_DB`] ?? 'testdb';
+        const username = envVars[`POSTGRES_${serviceName}_SERVICE_USER`] ?? 'testuser';
+        const password = envVars[`POSTGRES_${serviceName}_SERVICE_PASSWORD`] ?? 'testpass';
+        const ssl = envVars[`POSTGRES_${serviceName}_SERVICE_SSL`] ?? false;
+        const maxRetries = envVars[`POSTGRES_${serviceName}_SERVICE_MAX_RETRIES`] ?? 3;
         return { host, port, database, username, password, ssl, maxRetries };
     };
 
-    // Helper function to get config with fallback to legacy variables
-    const getExternalPartnerServiceConfig = () => {
-        // Try new naming first, fall back to legacy (POSTGRES2_*), then core service defaults
-        const coreConfig = getCoreServiceConfig();
-        const host = envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_HOST ?? envVars.POSTGRES2_HOST ?? coreConfig.host;
-        const port = envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_PORT ?? envVars.POSTGRES2_PORT ?? coreConfig.port;
-        const database = envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_DB ?? envVars.POSTGRES2_DB ?? coreConfig.database;
-        const username =
-            envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_USER ?? envVars.POSTGRES2_USER ?? coreConfig.username;
-        const password =
-            envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_PASSWORD ?? envVars.POSTGRES2_PASSWORD ?? coreConfig.password;
-        const ssl = envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_SSL ?? envVars.POSTGRES2_SSL ?? coreConfig.ssl;
-        const maxRetries =
-            envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_MAX_RETRIES ??
-            envVars.POSTGRES2_MAX_RETRIES ??
-            coreConfig.maxRetries;
-
-        return { host, port, database, username, password, ssl, maxRetries };
-    };
-
-    // Add core-service database
-    registry.set('core-service', getCoreServiceConfig());
-
-    // Add external-partner-service database (try new naming first, fall back to legacy)
-    const externalPartnerHost = envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_HOST ?? envVars.POSTGRES2_HOST;
-    const externalPartnerDb = envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_DB ?? envVars.POSTGRES2_DB;
-
-    if (externalPartnerHost && externalPartnerDb) {
-        registry.set('external-partner-service', getExternalPartnerServiceConfig());
-    }
-
-    // Discover additional databases from environment variables
-    // Pattern: POSTGRES_<NAME>_HOST, POSTGRES_<NAME>_DB, etc.
-    // Skip CORE_SERVICE and EXTERNAL_PARTNER_SERVICE as they're already registered
-    const dbNamePattern = /^POSTGRES_([A-Z0-9_]+)_HOST$/i;
-    const coreConfig = getCoreServiceConfig();
-
-    for (const [key, value] of Object.entries(process.env)) {
-        const match = key.match(dbNamePattern);
-        if (match && value) {
-            const nameUpper = match[1].toUpperCase();
-            const dbName = match[1].toLowerCase().replace(/_/g, '-');
-
-            // Skip if already registered or if it's a reserved name
-            if (
-                registry.has(dbName) ||
-                nameUpper === 'CORE_SERVICE' ||
-                nameUpper === 'EXTERNAL_PARTNER_SERVICE' ||
-                nameUpper === 'HOST' ||
-                nameUpper === '2'
-            ) {
-                continue;
-            }
-
-            const host = process.env[`POSTGRES_${nameUpper}_HOST`];
-            const db = process.env[`POSTGRES_${nameUpper}_DB`];
-
-            if (host && db) {
-                registry.set(dbName, {
-                    host,
-                    port: parseInt(process.env[`POSTGRES_${nameUpper}_PORT`] || String(coreConfig.port), 10),
-                    database: db,
-                    username: process.env[`POSTGRES_${nameUpper}_USER`] || coreConfig.username,
-                    password: process.env[`POSTGRES_${nameUpper}_PASSWORD`] || coreConfig.password,
-                    ssl: process.env[`POSTGRES_${nameUpper}_SSL`]?.toLowerCase() === 'true' || coreConfig.ssl,
-                    maxRetries: parseInt(
-                        process.env[`POSTGRES_${nameUpper}_MAX_RETRIES`] || String(coreConfig.maxRetries),
-                        10,
-                    ),
-                });
-            }
+    serviceNames.forEach((serviceName) => {
+        if (envVars[`POSTGRES_${serviceName}_SERVICE_HOST`]) {
+            registry.set(`${serviceName.toLowerCase()}-service`, getServiceConfig(serviceName));
         }
-    }
+    });
 
     return registry;
 }
