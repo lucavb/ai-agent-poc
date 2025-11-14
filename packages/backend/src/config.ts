@@ -217,28 +217,29 @@ function buildDatabaseRegistry(): DatabaseRegistry {
     
     // Helper function to get config with fallback to legacy variables
     const getCoreServiceConfig = () => {
-        // Try new naming first, fall back to legacy
-        const host = envVars.POSTGRES_CORE_SERVICE_HOST ?? 'localhost';
-        const port = envVars.POSTGRES_CORE_SERVICE_PORT ?? 5432;
-        const database = envVars.POSTGRES_CORE_SERVICE_DB ?? 'testdb';
-        const username = envVars.POSTGRES_CORE_SERVICE_USER ?? 'testuser';
-        const password = envVars.POSTGRES_CORE_SERVICE_PASSWORD ?? 'testpass';
-        const ssl = envVars.POSTGRES_CORE_SERVICE_SSL ?? false;
-        const maxRetries = envVars.POSTGRES_CORE_SERVICE_MAX_RETRIES ?? 3;
+        // Try new naming first, fall back to legacy, then hardcoded defaults
+        const host = envVars.POSTGRES_CORE_SERVICE_HOST ?? envVars.POSTGRES_HOST ?? 'localhost';
+        const port = envVars.POSTGRES_CORE_SERVICE_PORT ?? envVars.POSTGRES_PORT ?? 5432;
+        const database = envVars.POSTGRES_CORE_SERVICE_DB ?? envVars.POSTGRES_DB ?? 'testdb';
+        const username = envVars.POSTGRES_CORE_SERVICE_USER ?? envVars.POSTGRES_USER ?? 'testuser';
+        const password = envVars.POSTGRES_CORE_SERVICE_PASSWORD ?? envVars.POSTGRES_PASSWORD ?? 'testpass';
+        const ssl = envVars.POSTGRES_CORE_SERVICE_SSL ?? envVars.POSTGRES_SSL ?? false;
+        const maxRetries = envVars.POSTGRES_CORE_SERVICE_MAX_RETRIES ?? envVars.POSTGRES_MAX_RETRIES ?? 3;
         
         return { host, port, database, username, password, ssl, maxRetries };
     };
 
-        // Helper function to get config with fallback to legacy variables
+    // Helper function to get config with fallback to legacy variables
     const getExternalPartnerServiceConfig = () => {
-        // Try new naming first, fall back to legacy
-        const host = envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_HOST ?? 'localhost';
-        const port = envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_PORT ?? 5432;
-        const database = envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_DB ?? 'testdb';
-        const username = envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_USER ?? 'testuser';
-        const password = envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_PASSWORD ?? 'testpass';
-        const ssl = envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_SSL ?? false;
-        const maxRetries = envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_MAX_RETRIES ?? 3;
+        // Try new naming first, fall back to legacy (POSTGRES2_*), then core service defaults
+        const coreConfig = getCoreServiceConfig();
+        const host = envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_HOST ?? envVars.POSTGRES2_HOST ?? coreConfig.host;
+        const port = envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_PORT ?? envVars.POSTGRES2_PORT ?? coreConfig.port;
+        const database = envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_DB ?? envVars.POSTGRES2_DB ?? coreConfig.database;
+        const username = envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_USER ?? envVars.POSTGRES2_USER ?? coreConfig.username;
+        const password = envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_PASSWORD ?? envVars.POSTGRES2_PASSWORD ?? coreConfig.password;
+        const ssl = envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_SSL ?? envVars.POSTGRES2_SSL ?? coreConfig.ssl;
+        const maxRetries = envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_MAX_RETRIES ?? envVars.POSTGRES2_MAX_RETRIES ?? coreConfig.maxRetries;
         
         return { host, port, database, username, password, ssl, maxRetries };
     };

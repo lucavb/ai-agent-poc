@@ -29,8 +29,8 @@ function createSqlQuerySchema() {
         query: z.string().describe(
             `SQL SELECT statement to execute. For cross-database queries, prefix table names with database name and colon (e.g., "SELECT * FROM ${dbPrefixExamples}table_name ..."). Available database prefixes: ${availableDatabases.map(db => `"${db}:"`).join(', ')}.`
         ),
-        database_source: z.enum(enumValues).describe(
-            `Which database to use: "${availableDatabases.join('", "')}", or "both" for cross-database queries. All databases are equivalent. When "both" is used, table names in the query should be prefixed with database names (e.g., "${dbPrefixExamples}table_name").`
+        database_source: z.enum(enumValues).optional().default('core-service').describe(
+            `Which database to use: "${availableDatabases.join('", "')}", or "both" for cross-database queries. Defaults to 'core-service'. All databases are equivalent. When "both" is used, table names in the query should be prefixed with database names (e.g., "${dbPrefixExamples}table_name").`
         )
     });
 }

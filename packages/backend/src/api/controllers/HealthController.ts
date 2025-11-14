@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { HealthResponse } from '../types';
 import { Pool } from 'pg';
-import { getPostgresConfig } from '../../config';
+import { getDatabaseConfig } from '../../config';
 
 /**
  * Health Controller
@@ -24,7 +24,7 @@ export class HealthController {
             let databaseStatus: 'connected' | 'disconnected' | 'error' = 'disconnected';
             
             try {
-                const pgConfig = getPostgresConfig();
+                const pgConfig = getDatabaseConfig('core-service');
                 const pool = new Pool({
                     host: pgConfig.host,
                     port: pgConfig.port,

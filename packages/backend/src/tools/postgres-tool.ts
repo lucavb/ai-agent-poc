@@ -17,8 +17,8 @@ function createPostgresConnectionSchema() {
         : ['core-service'];
     
     return z.object({
-        database_source: z.enum(enumValues).describe(
-            `Which database to use. Available databases: ${availableDatabases.join(', ')}. All databases are equivalent.`
+        database_source: z.enum(enumValues).optional().default('core-service').describe(
+            `Which database to use. Available databases: ${availableDatabases.join(', ')}. Defaults to 'core-service'. All databases are equivalent.`
         ),
         host: z.string().optional().describe('PostgreSQL server hostname or IP address (overrides environment variable)'),
         port: z.number().optional().describe('PostgreSQL server port (overrides environment variable)'),
