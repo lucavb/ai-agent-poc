@@ -3,9 +3,15 @@
  */
 
 // Chat Request/Response
+export interface ChatMessage {
+    role: 'user' | 'assistant';
+    content: string;
+}
+
 export interface ChatRequest {
     query: string;
     sessionId?: string;
+    history?: ChatMessage[];
     options?: {
         debug?: boolean;
         maxIterations?: number;
@@ -90,4 +96,3 @@ export interface ApiErrorResponse {
     message?: string;
     details?: any;
 }
-

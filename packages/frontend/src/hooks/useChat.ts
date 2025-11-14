@@ -54,6 +54,12 @@ export function useChat({ sessionId, initialMessages = [], onMessagesChange }: U
             // Capture the sessionId at the time of sending to detect conversation switches
             const messageSessionId = sessionId;
 
+            // Capture the current message history BEFORE adding the new user message (for API)
+            const currentHistory = messages.map((msg) => ({
+                role: msg.role,
+                content: msg.content,
+            }));
+
             // Add user message immediately
             const userMessage: Message = {
                 id: `user-${Date.now()}`,
@@ -62,20 +68,16 @@ export function useChat({ sessionId, initialMessages = [], onMessagesChange }: U
                 timestamp: new Date(),
             };
 
+            // Keep track of messages including the new user message (for background save)
+            const messagesWithUserMsg = [...messages, userMessage];
+
             setMessages((prev) => [...prev, userMessage]);
             setIsLoading(true);
             setError(null);
 
-            // Capture the messages at send time (including the user message we just added)
-            let messagesAtSendTime: Message[] = [];
-            setMessages((prev) => {
-                messagesAtSendTime = prev;
-                return prev;
-            });
-
             try {
-                // Send to API
-                const response: ChatResponse = await sendChatMessage(content.trim(), messageSessionId);
+                // Send to API with history (excluding the current user message we just added)
+                const response: ChatResponse = await sendChatMessage(content.trim(), messageSessionId, currentHistory);
 
                 // Add assistant response
                 const assistantMessage: Message = {
@@ -90,7 +92,7 @@ export function useChat({ sessionId, initialMessages = [], onMessagesChange }: U
                     setMessages((prev) => [...prev, assistantMessage]);
                 } else {
                     // Conversation was switched - save response to the original conversation in the background
-                    const updatedMessages = [...messagesAtSendTime, assistantMessage];
+                    const updatedMessages = [...messagesWithUserMsg, assistantMessage];
                     if (onMessagesChange) {
                         onMessagesChange(messageSessionId, updatedMessages);
                     }
@@ -121,7 +123,7 @@ export function useChat({ sessionId, initialMessages = [], onMessagesChange }: U
                 }
             }
         },
-        [sessionId, isLoading, onMessagesChange],
+        [messages, sessionId, isLoading, onMessagesChange],
     );
 
     const clearConversation = useCallback(async () => {
