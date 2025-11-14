@@ -21,7 +21,7 @@ const MessageContainer = styled('div', {
 const MessageContent = styled('div', {
     display: 'flex',
     flexDirection: 'column',
-
+    width: '100%',
     variants: {
         role: {
             user: {
@@ -71,11 +71,9 @@ const MessageTime = styled('div', {
         role: {
             user: {
                 textAlign: 'right',
-                color: 'rgba(255, 255, 255, 0.85)', // Increased opacity for better readability
             },
             assistant: {
                 textAlign: 'left',
-                color: '$textSecondary',
             },
         },
     },

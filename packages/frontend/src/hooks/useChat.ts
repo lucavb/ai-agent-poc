@@ -1,99 +1,115 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { sendChatMessage, clearContext, type ChatResponse } from '../services/api';
 
 export interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    timestamp: Date;
 }
 
 interface UseChatOptions {
-  sessionId: string;
-  initialMessages?: Message[];
-  onMessagesChange?: (messages: Message[]) => void;
+    sessionId: string;
+    initialMessages?: Message[];
+    onMessagesChange?: (messages: Message[]) => void;
 }
 
 export function useChat({ sessionId, initialMessages = [], onMessagesChange }: UseChatOptions) {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+    const [messages, setMessages] = useState<Message[]>(initialMessages);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const previousSessionIdRef = useRef<string>(sessionId);
+    const skipNextUpdateRef = useRef(false);
 
-  // Update messages when initialMessages change (conversation switch)
-  useEffect(() => {
-    setMessages(initialMessages);
-  }, [sessionId]); // Reset when session changes
+    // Update messages when switching conversations
+    useEffect(() => {
+        // Only update if sessionId actually changed
+        if (previousSessionIdRef.current !== sessionId) {
+            previousSessionIdRef.current = sessionId;
+            setMessages(initialMessages);
+            // Skip the next onMessagesChange call since this is just a conversation switch
+            skipNextUpdateRef.current = true;
+        }
+    }, [sessionId, initialMessages]);
 
-  // Notify parent of message changes
-  useEffect(() => {
-    if (onMessagesChange) {
-      onMessagesChange(messages);
-    }
-  }, [messages, onMessagesChange]);
+    // Notify parent of message changes
+    useEffect(() => {
+        // Skip update if this was triggered by a conversation switch
+        if (skipNextUpdateRef.current) {
+            skipNextUpdateRef.current = false;
+            return;
+        }
 
-  const sendMessage = useCallback(async (content: string) => {
-    if (!content.trim() || isLoading) return;
+        if (onMessagesChange) {
+            onMessagesChange(messages);
+        }
+    }, [messages, onMessagesChange]);
 
-    // Add user message immediately
-    const userMessage: Message = {
-      id: `user-${Date.now()}`,
-      role: 'user',
-      content: content.trim(),
-      timestamp: new Date(),
+    const sendMessage = useCallback(
+        async (content: string) => {
+            if (!content.trim() || isLoading) return;
+
+            // Add user message immediately
+            const userMessage: Message = {
+                id: `user-${Date.now()}`,
+                role: 'user',
+                content: content.trim(),
+                timestamp: new Date(),
+            };
+
+            setMessages((prev) => [...prev, userMessage]);
+            setIsLoading(true);
+            setError(null);
+
+            try {
+                // Send to API
+                const response: ChatResponse = await sendChatMessage(content.trim(), sessionId);
+
+                // Add assistant response
+                const assistantMessage: Message = {
+                    id: `assistant-${Date.now()}`,
+                    role: 'assistant',
+                    content: response.response,
+                    timestamp: new Date(response.timestamp),
+                };
+
+                setMessages((prev) => [...prev, assistantMessage]);
+            } catch (err) {
+                const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
+                setError(errorMessage);
+
+                // Add error message
+                const errorMsg: Message = {
+                    id: `error-${Date.now()}`,
+                    role: 'assistant',
+                    content: `Sorry, I encountered an error: ${errorMessage}`,
+                    timestamp: new Date(),
+                };
+
+                setMessages((prev) => [...prev, errorMsg]);
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [sessionId, isLoading],
+    );
+
+    const clearConversation = useCallback(async () => {
+        try {
+            await clearContext(sessionId);
+            setMessages([]);
+            setError(null);
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Failed to clear conversation';
+            setError(errorMessage);
+        }
+    }, [sessionId]);
+
+    return {
+        messages,
+        isLoading,
+        error,
+        sendMessage,
+        clearConversation,
     };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Send to API
-      const response: ChatResponse = await sendChatMessage(content.trim(), sessionId);
-
-      // Add assistant response
-      const assistantMessage: Message = {
-        id: `assistant-${Date.now()}`,
-        role: 'assistant',
-        content: response.response,
-        timestamp: new Date(response.timestamp),
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
-      setError(errorMessage);
-
-      // Add error message
-      const errorMsg: Message = {
-        id: `error-${Date.now()}`,
-        role: 'assistant',
-        content: `Sorry, I encountered an error: ${errorMessage}`,
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, errorMsg]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [sessionId, isLoading]);
-
-  const clearConversation = useCallback(async () => {
-    try {
-      await clearContext(sessionId);
-      setMessages([]);
-      setError(null);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to clear conversation';
-      setError(errorMessage);
-    }
-  }, [sessionId]);
-
-  return {
-    messages,
-    isLoading,
-    error,
-    sendMessage,
-    clearConversation,
-  };
 }
-
