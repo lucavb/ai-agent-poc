@@ -274,8 +274,59 @@ const ThinkIcon = styled('span', {
     },
 });
 
+const DeleteButton = styled('button', {
+    fontSize: '$xs',
+    color: '$textSecondary',
+    backgroundColor: 'transparent',
+    border: '1px solid $border',
+    padding: '$1 $2',
+    borderRadius: '$sm',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '$1',
+    fontWeight: '$medium',
+    transition: 'all 0.2s ease',
+    marginTop: '$1',
+
+    '&:hover': {
+        backgroundColor: '$errorLight',
+        borderColor: '$error',
+        color: '$error',
+    },
+
+    '&:focus': {
+        outline: '2px solid $error',
+        outlineOffset: '2px',
+    },
+
+    '&:active': {
+        transform: 'scale(0.95)',
+    },
+});
+
+const MessageActions = styled('div', {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '$2',
+    marginTop: '$1',
+
+    variants: {
+        role: {
+            user: {
+                justifyContent: 'flex-end',
+            },
+            assistant: {
+                justifyContent: 'flex-start',
+            },
+        },
+    },
+});
+
 interface ChatMessageProps {
     message: Message;
+    isLast?: boolean;
+    onDelete?: () => void;
 }
 
 /**
@@ -298,7 +349,7 @@ function parseThinkTags(content: string): { mainContent: string; thinkContent: s
     return { mainContent, thinkContent };
 }
 
-export function ChatMessage({ message }: ChatMessageProps) {
+export function ChatMessage({ message, isLast = false, onDelete }: ChatMessageProps) {
     const [isThinkOpen, setIsThinkOpen] = useState(false);
 
     const formatTime = (date: Date) => {
@@ -337,6 +388,16 @@ export function ChatMessage({ message }: ChatMessageProps) {
                             </ThinkContent>
                         )}
                     </ThinkSection>
+                )}
+
+                {/* Show delete button only for the last message */}
+                {isLast && onDelete && (
+                    <MessageActions role={message.role}>
+                        <DeleteButton onClick={onDelete} aria-label="Delete last message">
+                            <span>🗑️</span>
+                            <span>Delete</span>
+                        </DeleteButton>
+                    </MessageActions>
                 )}
             </MessageContent>
         </MessageContainer>

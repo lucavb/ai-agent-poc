@@ -216,7 +216,7 @@ export function ChatContainer() {
         [updateConversationMessages],
     );
 
-    const { messages, isLoading, sendMessage, clearConversation } = useChat({
+    const { messages, isLoading, sendMessage, clearConversation, deleteLastMessage } = useChat({
         sessionId: currentConversationId || 'default',
         initialMessages: currentConversation?.messages || [],
         onMessagesChange: handleMessagesChange,
@@ -246,6 +246,12 @@ export function ChatContainer() {
         createConversation();
         setSidebarOpen(false);
     };
+
+    // Find the index of the last user message (calculate once)
+    const lastUserMessageIndex = messages
+        .map((msg, idx) => ({ msg, idx }))
+        .filter(({ msg }) => msg.role === 'user')
+        .pop()?.idx ?? -1;
 
     return (
         <AppContainer>
@@ -294,9 +300,19 @@ export function ChatContainer() {
                         </EmptyState>
                     ) : (
                         <>
-                            {messages.map((message) => (
-                                <ChatMessage key={message.id} message={message} />
-                            ))}
+                            {messages.map((message, index) => {
+                                // Show delete button only on the last user message
+                                const isLastUserMessage = index === lastUserMessageIndex && !isLoading;
+                                
+                                return (
+                                    <ChatMessage
+                                        key={message.id}
+                                        message={message}
+                                        isLast={isLastUserMessage}
+                                        onDelete={isLastUserMessage ? deleteLastMessage : undefined}
+                                    />
+                                );
+                            })}
                             {isLoading && <LoadingIndicator />}
                             <div ref={messagesEndRef} />
                         </>

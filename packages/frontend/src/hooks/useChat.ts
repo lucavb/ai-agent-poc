@@ -137,11 +137,41 @@ export function useChat({ sessionId, initialMessages = [], onMessagesChange }: U
         }
     }, [sessionId]);
 
+    const deleteLastMessage = useCallback(() => {
+        if (messages.length === 0) return;
+
+        setMessages((prev) => {
+            const newMessages = [...prev];
+            const lastMessage = newMessages[newMessages.length - 1];
+
+            // If the last message is an assistant message, remove it and the previous user message
+            if (lastMessage.role === 'assistant') {
+                // Remove the assistant message
+                newMessages.pop();
+                // If there's a user message before it, remove that too
+                if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'user') {
+                    newMessages.pop();
+                }
+            } else if (lastMessage.role === 'user') {
+                // If the last message is a user message, just remove it
+                newMessages.pop();
+            }
+
+            // Notify parent of the change
+            if (onMessagesChange) {
+                onMessagesChange(sessionId, newMessages);
+            }
+
+            return newMessages;
+        });
+    }, [messages.length, sessionId, onMessagesChange]);
+
     return {
         messages,
         isLoading,
         error,
         sendMessage,
         clearConversation,
+        deleteLastMessage,
     };
 }
