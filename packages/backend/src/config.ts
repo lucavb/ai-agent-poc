@@ -1,6 +1,7 @@
 import * as dotenv from 'dotenv';
 import { z } from 'zod';
 import { LLMConfig, AgentConfig } from './types';
+import * as path from 'path';
 
 // PostgreSQL configuration type
 export interface PostgresConfig {
@@ -13,8 +14,8 @@ export interface PostgresConfig {
     maxRetries: number;
 }
 
-// Load environment variables
-dotenv.config();
+// Load environment variables from project root
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 // Zod schema for environment variables
 const EnvSchema = z.object({

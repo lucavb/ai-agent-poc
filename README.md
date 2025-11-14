@@ -1,43 +1,166 @@
-# MCP Agent System
+# AI Agent POC - Monorepo
 
-A TypeScript agent system using the Model Context Protocol (MCP) SDK that demonstrates advanced agent architecture with iteration loops, tool integration, and LLM reasoning.
+A full-stack AI agent system with a React frontend and Node.js backend, demonstrating database querying through natural language.
 
-## 🚀 Features
+## 🏗️ Project Structure
 
-- **Agent with Iteration Loop**: Multi-step reasoning with configurable iteration limits
-- **MCP Integration**: Standardized tool registration and execution using MCP SDK
-- **LLM Integration**: Compatible with OpenAI-compatible endpoints (local or remote)
-- **Tool System**: Flexible tool registration with Zod schema validation
-- **Type Safety**: Full TypeScript support with comprehensive type definitions
-- **Error Handling**: Graceful error handling and recovery mechanisms
-- **Debugging**: Built-in debug mode with detailed reasoning trails
-
-## 📦 Installation
-
-```bash
-# Clone the repository
-git clone <repository-url>
-cd mcp-agent-system
-
-# Install dependencies
-npm install
-
-# Copy the example environment file and configure
-cp env.example .env
-# Edit .env file with your settings
-
-# Build the project
-npm run build
-
-# Run the interactive agent
-npm start
+```
+ai-agent-poc/
+├── packages/
+│   ├── backend/          # AI Agent backend (Node.js + TypeScript)
+│   │   ├── src/          # Source code (agents, tools, LLM clients)
+│   │   ├── dist/         # Compiled JavaScript
+│   │   ├── package.json
+│   │   └── tsconfig.json
+│   └── frontend/         # React UI (Vite + TypeScript)
+│       ├── src/          # React components and pages
+│       ├── public/       # Static assets
+│       ├── package.json
+│       ├── tsconfig.json
+│       └── vite.config.ts
+├── fixtures/             # Database fixtures and test data
+├── docker-compose.yml    # PostgreSQL test database
+├── package.json          # Root workspace configuration
+└── README.md
 ```
 
-## 🛠️ Core Components
+## 🚀 Quick Start
 
-### Environment Configuration
+### Prerequisites
 
-The system uses Zod for environment variable validation and parsing. Create a `.env` file:
+- Node.js 20.19+ or 22.12+
+- npm 7+ (for workspace support)
+- Docker & Docker Compose (for test database)
+
+### Installation
+
+```bash
+# Install all dependencies (backend + frontend)
+npm install
+```
+
+### Running the Application
+
+#### 1. Start the test database
+```bash
+docker compose up -d
+```
+
+#### 2. Configure environment variables
+
+Create a `.env` file in the project root (copy from `env.example` and update values):
+
+```bash
+# Add these API configuration lines
+API_PORT=3001
+API_HOST=localhost
+CORS_ORIGIN=http://localhost:5173
+```
+
+See [API_QUICKSTART.md](API_QUICKSTART.md) for complete `.env` configuration.
+
+#### 3. Start the Backend API Server
+```bash
+# Run API server in development mode
+npm run dev:api
+
+# API will be available at http://localhost:3001
+```
+
+**Alternative: Terminal Interface (CLI)**
+```bash
+# Run backend CLI in development mode
+npm run dev:backend
+```
+
+#### 4. Start the Frontend (React UI)
+```bash
+# In a separate terminal
+npm run dev:frontend
+
+# Frontend will be available at http://localhost:5173
+```
+
+#### Quick Development Setup
+```bash
+# Terminal 1: Database
+docker compose up -d
+
+# Terminal 2: API Server
+npm run dev:api
+
+# Terminal 3: Frontend
+npm run dev:frontend
+```
+
+## 📦 Packages
+
+### Backend (`@ai-agent-poc/backend`)
+
+TypeScript agent system using Model Context Protocol (MCP) SDK with:
+- **AI SDK Integration**: Using Vercel's AI SDK with OpenAI-compatible endpoints
+- **REST API Server**: Express-based API with 5 core endpoints
+- **Tool System**: PostgreSQL query tools, calculator, context analysis
+- **LLM Client**: Flexible LLM communication with local or remote endpoints
+- **Context Management**: Multi-turn conversations with reference resolution
+
+**Available APIs:**
+- `POST /api/chat` - Send queries to the AI agent
+- `GET /api/tools` - List available tools
+- `GET /api/context` - Get conversation context
+- `DELETE /api/context` - Clear conversation context
+- `GET /health` - Health check
+
+**Documentation:**
+- [API Quick Start Guide](API_QUICKSTART.md) - Get started in 5 minutes
+- [Full API Documentation](packages/backend/API.md) - Complete reference
+- [Backend README](packages/backend/README.md) - Detailed agent documentation
+
+### Frontend (`@ai-agent-poc/frontend`)
+
+React + TypeScript + Vite application:
+- Modern, responsive UI for chatting with the AI agent
+- Real-time database query visualization
+- Conversation history and context display
+
+## 🛠️ Development Scripts
+
+### Root Level
+```bash
+npm run dev              # Start frontend dev server
+npm run dev:api          # Start backend REST API server (recommended)
+npm run dev:backend      # Start backend CLI (terminal interface)
+npm run dev:frontend     # Start frontend in dev mode
+npm run build            # Build both packages
+npm run build:backend    # Build backend only
+npm run build:frontend   # Build frontend only
+npm run start:api        # Start production API server
+```
+
+### Backend Only
+```bash
+cd packages/backend
+npm run dev:api         # API server in dev mode (recommended)
+npm run dev             # CLI interface in dev mode
+npm run build           # Compile TypeScript
+npm run start:api       # Run compiled API server
+npm start               # Run compiled CLI
+```
+
+### Frontend Only
+```bash
+cd packages/frontend
+npm run dev             # Start Vite dev server
+npm run build           # Build for production
+npm run preview         # Preview production build
+npm run lint            # Run ESLint
+```
+
+## 🔧 Configuration
+
+### Backend Environment Variables
+
+Create a `.env` file in the root directory:
 
 ```bash
 # LLM Configuration
@@ -51,484 +174,69 @@ AGENT_VERSION=1.0.0
 AGENT_MAX_ITERATIONS=8
 AGENT_DEBUG=true
 
+# PostgreSQL Test Database
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_DB=testdb
+POSTGRES_USER=testuser
+POSTGRES_PASSWORD=testpass
+POSTGRES_MAX_RETRIES=3
+
 # Optional LLM Settings
 OPENAI_MAX_TOKENS=4096
 OPENAI_TEMPERATURE=0.7
 OPENAI_TIMEOUT=30000
 ```
 
-### MCPAgent Class
-
-The main agent class that manages the iteration loop and tool execution:
-
-```typescript
-import { getFullAgentConfig } from './config';
-
-// Use environment configuration
-const agent = new MCPAgent(getFullAgentConfig());
-
-// Or customize specific values
-const customAgent = new MCPAgent({
-    ...getFullAgentConfig(),
-    maxIterations: 5,
-    debug: false,
-});
-```
-
-### Tool Registration
-
-Tools are registered using Zod schemas for type-safe parameter validation:
-
-```typescript
-import { z } from 'zod';
-import { createTool } from './tool-system';
-
-const myTool = createTool(
-    'tool_name',
-    'Tool description',
-    z.object({
-        param1: z.string(),
-        param2: z.number().optional(),
-    }),
-    async (input) => {
-        // Tool implementation
-        return { result: 'success' };
-    },
-);
-
-agent.addTool(myTool);
-```
-
-### LLM Client
-
-Handles communication with OpenAI-compatible endpoints:
-
-```typescript
-const llmClient = new LLMClient({
-    baseURL: 'http://localhost:1234/v1',
-    apiKey: 'your-api-key',
-    model: 'model-name',
-    maxTokens: 4096,
-    temperature: 0.7,
-});
-```
-
-## 🔧 Available Tools
-
-### Calculator Tool
-
-Performs safe mathematical calculations:
-
-```typescript
-agent.addTool(calculatorTool);
-
-// Usage: "Calculate 15 * 3 + 27"
-```
-
-### PostgreSQL Schema Tool
-
-Connects to PostgreSQL database and fetches complete schema information:
-
-```typescript
-agent.addTool(postgresSchemaTool);
-
-// Usage: "Get database schema" (uses .env configuration)
-// Or: "Get database schema from PostgreSQL server myhost database mydb with username admin and password secret"
-```
-
-### PostgreSQL Query Tool
-
-Executes SELECT statements with automatic retry and error correction:
-
-```typescript
-agent.addTool(postgresQueryTool);
-
-// Usage: "Select all users from the database"
-// Or: "Query: SELECT * FROM products WHERE price > 100"
-```
-
-### Context Analysis Tool
-
-Analyzes queries for context references and provides tool selection guidance:
-
-```typescript
-agent.addTool(contextTool);
-
-// Usage: Used automatically for early-stage query analysis
-// Helps the AI understand: "summarize these orders" → database query with context
-```
-
-## 🧠 Context-Aware Conversations
-
-The system now maintains conversation context to enable natural follow-up questions using a **two-stage approach**:
-
-### Architecture
-1. **Context Analysis Tool** - Used first to understand query intent and references
-2. **Specialized Tools** - Selected based on context analysis guidance
-
-### Context Features
-- **Early Tool Selection**: Context analysis happens BEFORE tool selection
-- **Reference Resolution**: Resolves "these orders", "his orders", "summarize them" 
-- **Intent Analysis**: Determines if query is database, calculation, or other type
-- **Entity Tracking**: Remembers users, tables, and query results from previous interactions
-- **Tool Guidance**: Provides recommendations for which tools to use next
-
-### Example Multi-Turn Conversation
-```
-> How many orders does user johndoe have?
-→ Step 1: Context Tool analyzes intent (database query) and stores user entity
-→ Step 2: AI selects postgres_query tool based on context guidance
-→ Step 3: Query executes and stores results in context
-→ Result: 3 orders
-
-> Summarize these orders
-→ Step 1: Context Tool detects reference, resolves to "orders for user johndoe" 
-→ Step 2: Context Tool recommends postgres_query tool with high confidence
-→ Step 3: AI understands this is a database query about previous results
-→ Step 4: Query executed with context-enhanced understanding
-→ Result: Summary of johndoe's specific orders
-```
-
 ## 🐳 Docker Test Environment
 
-For testing the PostgreSQL tool, a Docker Compose setup is provided with a pre-configured PostgreSQL database containing sample data.
-
-### Starting the Test Database
+Start the PostgreSQL test database:
 
 ```bash
-# Start PostgreSQL with sample data
+# Start database
 docker compose up -d
 
-# Check if database is ready
+# View logs
 docker compose logs postgres
 
-# Stop the database
+# Stop database
 docker compose down
 
-# Stop and remove all data
+# Stop and remove data
 docker compose down -v
 ```
 
-### Test Database Connection Details
+Test database includes:
+- 7 tables with e-commerce sample data
+- Users, products, orders, reviews
+- Foreign key relationships and indexes
 
-- **Host**: `localhost`
-- **Port**: `5432`
-- **Database**: `testdb`
-- **Username**: `testuser`
-- **Password**: `testpass`
-- **Max Retries**: `3` (configurable via `POSTGRES_MAX_RETRIES`)
+## 🧪 Example Usage
 
-### Sample Test Queries
-
-Once the database is running, you can test the PostgreSQL tool:
-
-**Schema queries:**
-```
-> Get database schema
-> Show me the PostgreSQL schema
-```
-
-**Data queries (with automatic retry on errors):**
-```
-> Select all users from the database
-> Query: SELECT name, price FROM products WHERE price > 100
-> SELECT u.username, COUNT(o.id) as order_count FROM users u LEFT JOIN orders o ON u.id = o.user_id GROUP BY u.id, u.username
-```
-
-**Context-aware follow-up queries:**
+### Backend Terminal
 ```
 > How many orders does user johndoe have?
-> Show me these orders
-> Summarize them
+> Summarize these orders
 > What products did he order?
 ```
 
-**With custom connection parameters:**
-```
-> Get database schema from PostgreSQL server localhost port 5432 database testdb with username testuser and password testpass
-```
+### Frontend UI (Coming Soon)
+- Chat interface for natural language queries
+- Visual display of query results
+- Conversation history and context tracking
 
-The test database includes:
-- 7 tables with realistic e-commerce data
-- Various PostgreSQL data types (SERIAL, VARCHAR, TEXT, DECIMAL, BOOLEAN, TIMESTAMP, UUID, INET)
-- Foreign key relationships and indexes
-- Sample data for users, products, orders, and reviews
+## 📝 Workspace Management
 
-See [fixtures/README.md](fixtures/README.md) for detailed information about the test database structure.
+This is a monorepo using npm workspaces. Benefits:
+- Shared dependencies hoisted to root
+- Cross-package linking
+- Consistent tooling and scripts
+- Simplified dependency management
 
-## 🎯 Usage
+## 🎯 Next Steps
 
-### Interactive Mode
-
-The system runs in interactive mode by default. Simply start it and enter your queries:
-
-```bash
-npm start
-```
-
-You'll see an interactive prompt where you can:
-
-- Enter natural language queries
-- Use special commands (type `/help` for details)
-- Get real-time responses from the agent
-
-### Special Commands
-
-- `/help` - Show available commands and example queries
-- `/tools` - List all available tools and their descriptions
-- `/config` - Display current configuration
-- `/clear` - Clear the console
-- `/exit` - Exit the application
-
-### Example Queries
-
-```
-> Calculate 15 * 3
-> What is (25 + 75) / 2?
-> Perform the calculation: 100 - 42 + 8
-> Get database schema from PostgreSQL server localhost database testdb
-> Connect to postgres://localhost:5432/testdb with username testuser and password testpass to get schema
-```
-
-### Programmatic Usage
-
-You can also use the agent programmatically:
-
-```typescript
-import { MCPAgent } from './src/mcp-agent';
-import { calculatorTool, postgresSchemaTool } from './src/tools';
-import { getFullAgentConfig } from './src/config';
-
-// Create agent with environment configuration
-const agent = new MCPAgent(getFullAgentConfig());
-
-// Register tools
-agent.addTool(calculatorTool);
-agent.addTool(postgresSchemaTool);
-
-// Process a query
-const result = await agent.processQuery("Calculate 25 + 75");
-console.log(result.response);
-
-// Get database schema
-const schemaResult = await agent.processQuery("Get schema from PostgreSQL server localhost port 5432 database testdb with username testuser and password testpass");
-console.log(schemaResult.response);
-```
-
-### Multi-step Reasoning
-
-The agent can handle complex queries requiring multiple tool calls. Just enter a complex query and watch it work:
-
-```
-> Get the current directory, find all TypeScript files, read the package.json, and get the weather in London
-
-📝 Processing: Get the current directory, find all TypeScript files, read the package.json, and get the weather in London
-============================================================
-
-📊 Results:
-✅ Success: true
-🔄 Iterations: 3
-✨ Completed: true
-🔧 Tool calls: 4
-  1. get_cwd({})
-  2. search_files({"pattern":"*.ts"})
-  3. read_file({"filePath":"package.json"})
-  4. get_weather({"city":"London"})
-
-🎯 Response:
-I've gathered all the requested information:
-
-**Current Directory:** /Users/username/mcp-agent-system
-
-**TypeScript Files Found:** 8 files including src/types.ts, src/mcp-agent.ts, src/llm-client.ts...
-
-**Package.json Info:** This is an MCP Agent System v1.0.0 with dependencies including @modelcontextprotocol/sdk...
-
-**London Weather:** Currently 15°C, rainy conditions with 80% humidity...
-```
-
-## 🔍 Agent State and Debugging
-
-The agent maintains detailed state information:
-
-```typescript
-const state = agent.getState();
-console.log({
-    iterations: state.iterations,
-    completed: state.completed,
-    reasoning: state.reasoning,
-    toolCalls: state.toolCalls,
-});
-```
-
-Enable debug mode for detailed logging:
-
-```typescript
-const agent = new MCPAgent({
-    // ... other config
-    debug: true,
-});
-```
-
-## 🌐 MCP Server Integration
-
-The system includes MCP server capabilities:
-
-```typescript
-// Initialize MCP server
-await agent.initializeMCPServer();
-
-// Get MCP server instance
-const mcpServer = agent.getMCPServer();
-```
-
-## 📊 Agent Results
-
-The agent returns comprehensive results:
-
-```typescript
-interface AgentResult {
-    success: boolean;
-    completed: boolean;
-    iterations: number;
-    response: string;
-    reasoning: string[];
-    toolCalls: ToolCall[];
-    error?: string;
-}
-```
-
-## 🔒 Error Handling
-
-The system includes robust error handling:
-
-- **Tool Errors**: Individual tool failures don't stop the agent
-- **LLM Errors**: Network and API errors are handled gracefully
-- **Validation Errors**: Zod schema validation provides clear error messages
-- **Iteration Limits**: Prevents infinite loops with configurable limits
-
-## 🎨 Creating Custom Tools
-
-```typescript
-import { z } from 'zod';
-import { createTool } from './src/tool-system';
-
-// Define input schema
-const MyToolSchema = z.object({
-    text: z.string().min(1),
-    count: z.number().positive().optional().default(1),
-});
-
-// Create tool
-const myCustomTool = createTool('my_custom_tool', 'Description of what this tool does', MyToolSchema, async (input) => {
-    // Tool implementation
-    const { text, count } = input;
-    return {
-        result: text.repeat(count),
-        processed: true,
-    };
-});
-
-// Register with agent
-agent.addTool(myCustomTool);
-```
-
-## 🔧 Configuration Options
-
-### Agent Configuration
-
-```typescript
-interface AgentConfig {
-    name: string;
-    version: string;
-    llmConfig: LLMConfig;
-    maxIterations?: number; // Default: 8
-    debug?: boolean; // Default: false
-}
-```
-
-### LLM Configuration
-
-```typescript
-interface LLMConfig {
-    baseURL: string;
-    apiKey: string;
-    model: string;
-    maxTokens?: number; // Default: 4096
-    temperature?: number; // Default: 0.7
-    timeout?: number; // Default: 30000ms
-}
-```
-
-## 📈 Performance Considerations
-
-- **Tool Execution**: Tools run in parallel when possible
-- **Memory Management**: Conversation history is maintained efficiently
-- **Error Recovery**: Failed tools don't prevent other tools from executing
-- **Timeout Handling**: Configurable timeouts prevent hanging requests
-
-## 🧪 Testing
-
-```bash
-# Run tests
-npm test
-
-# Run with custom environment variables
-OPENAI_BASE_URL=http://localhost:1234/v1 OPENAI_MODEL=your-model npm start
-
-# Or modify your .env file and run normally
-npm start
-```
-
-## 📝 Development
-
-### Project Structure
-
-```
-src/
-├── types.ts           # TypeScript type definitions
-├── llm-client.ts      # LLM communication
-├── tool-system.ts     # Tool registration and execution
-├── mcp-server.ts      # MCP server implementation
-├── mcp-agent.ts       # Main agent class
-├── config.ts          # Environment configuration with Zod
-├── tools/             # Example tools
-│   ├── weather-tool.ts
-│   ├── calculator-tool.ts
-│   ├── file-search-tool.ts
-│   ├── file-read-tool.ts
-│   ├── cwd-tool.ts
-│   └── index.ts
-└── index.ts           # Usage examples
-```
-
-### Building and Running
-
-```bash
-# Development mode
-npm run dev
-
-# Build for production
-npm run build
-
-# Run built version
-npm start
-```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Implement your changes
-4. Add tests if applicable
-5. Submit a pull request
+See [Next Steps](#next-steps-for-development) below for implementation roadmap.
 
 ## 📄 License
 
 MIT License - see LICENSE file for details
-
-## 🙏 Acknowledgments
-
-- Built with [Model Context Protocol SDK](https://github.com/modelcontextprotocol/typescript-sdk)
-- Uses [Zod](https://github.com/colinhacks/zod) for schema validation
-- Compatible with OpenAI-compatible LLM endpoints
