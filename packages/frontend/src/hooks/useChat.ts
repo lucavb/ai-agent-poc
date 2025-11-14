@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { sendChatMessage, clearContext, type ChatResponse } from '../services/api';
 
 export interface Message {
@@ -8,10 +8,28 @@ export interface Message {
   timestamp: Date;
 }
 
-export function useChat(sessionId: string = 'default') {
-  const [messages, setMessages] = useState<Message[]>([]);
+interface UseChatOptions {
+  sessionId: string;
+  initialMessages?: Message[];
+  onMessagesChange?: (messages: Message[]) => void;
+}
+
+export function useChat({ sessionId, initialMessages = [], onMessagesChange }: UseChatOptions) {
+  const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Update messages when initialMessages change (conversation switch)
+  useEffect(() => {
+    setMessages(initialMessages);
+  }, [sessionId]); // Reset when session changes
+
+  // Notify parent of message changes
+  useEffect(() => {
+    if (onMessagesChange) {
+      onMessagesChange(messages);
+    }
+  }, [messages, onMessagesChange]);
 
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim() || isLoading) return;

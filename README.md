@@ -131,12 +131,16 @@ TypeScript agent system using Model Context Protocol (MCP) SDK with:
 
 React + TypeScript + Vite + Stitches application:
 - **Modern Chat UI**: Clean, professional design
+- **Multi-Conversation Support**: Create and manage multiple conversations
+- **Sidebar Navigation**: Easy switching between conversations
+- **Persistent Storage**: Conversations saved in localStorage
 - **Real-time Messaging**: Send queries, see AI responses
 - **Loading Indicators**: Animated "Thinking..." with bouncing dots
-- **Context Awareness**: Follow-up questions work naturally
-- **Clear Conversation**: Button to reset chat
+- **Context Awareness**: Each conversation maintains its own context
+- **Auto-Generated Titles**: Smart titles from first message
+- **Delete Conversations**: Remove conversations you don't need
 - **Empty State**: Welcome screen with example queries
-- **Responsive Design**: Works on mobile and desktop
+- **Responsive Design**: Mobile-friendly sidebar (slide-out on mobile)
 - **Type Safety**: Full TypeScript support
 
 **Quick Start:**
@@ -147,7 +151,9 @@ npm run dev:frontend
 
 **Documentation:**
 - [Chat UI Quick Start](CHAT_UI_QUICKSTART.md) - Get started in 5 minutes
+- [Multi-Conversation Guide](MULTI_CONVERSATION_GUIDE.md) - Managing multiple conversations
 - [Frontend Implementation Summary](FRONTEND_IMPLEMENTATION_SUMMARY.md) - Technical details
+- [UI Bugs Fixed](UI_BUGS_FIXED.md) - Recent bug fixes and improvements
 
 ## 🛠️ Development Scripts
 

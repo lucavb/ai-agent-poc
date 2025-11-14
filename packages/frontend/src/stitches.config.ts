@@ -170,7 +170,13 @@ export const globalStyles = globalCss({
     boxSizing: 'border-box',
   },
   
-  'html, body, #root': {
+  'html, body': {
+    height: '100%',
+    width: '100%',
+    overflow: 'hidden', // Prevent page scrolling
+  },
+  
+  '#root': {
     height: '100%',
     width: '100%',
   },
