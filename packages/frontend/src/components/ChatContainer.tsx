@@ -6,6 +6,7 @@ import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { LoadingIndicator } from './LoadingIndicator';
 import { Sidebar } from './Sidebar';
+import { ThemeToggle } from './ThemeToggle';
 
 const AppContainer = styled('div', {
     display: 'flex',
@@ -32,6 +33,12 @@ const Header = styled('div', {
 });
 
 const HeaderLeft = styled('div', {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '$3',
+});
+
+const HeaderRight = styled('div', {
     display: 'flex',
     alignItems: 'center',
     gap: '$3',
@@ -274,7 +281,10 @@ export function ChatContainer() {
                             <Subtitle>Ask questions in natural language</Subtitle>
                         </TitleContainer>
                     </HeaderLeft>
-                    {messages.length > 0 && <ClearButton onClick={handleClearChat}>Clear Chat</ClearButton>}
+                    <HeaderRight>
+                        <ThemeToggle />
+                        {messages.length > 0 && <ClearButton onClick={handleClearChat}>Clear Chat</ClearButton>}
+                    </HeaderRight>
                 </Header>
 
                 <MessagesContainer>

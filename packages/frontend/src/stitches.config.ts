@@ -46,6 +46,12 @@ export const {
       assistantMessage: '#f8f9fa',
       userText: '#ffffff',
       assistantText: '#212529',
+      
+      // Gray colors for light mode
+      gray50: '#f8f9fa',
+      gray100: '#e9ecef',
+      gray200: '#dee2e6',
+      gray300: '#ced4da',
     },
     space: {
       1: '4px',
@@ -163,6 +169,52 @@ export const {
   },
 });
 
+// Dark theme
+export const darkTheme = createTheme({
+  colors: {
+    // Background colors
+    bg: '#1a1a1a',
+    bgSecondary: '#242424',
+    bgTertiary: '#2d2d2d',
+    
+    // Text colors
+    text: '#e0e0e0',
+    textSecondary: '#a0a0a0',
+    textMuted: '#707070',
+    
+    // Brand colors
+    primary: '#4a9eff',
+    primaryHover: '#6bb0ff',
+    primaryLight: '#1a3a5c',
+    
+    // Status colors
+    success: '#4ade80',
+    successLight: '#1a3a2a',
+    error: '#f87171',
+    errorLight: '#3a1a1a',
+    warning: '#fbbf24',
+    warningLight: '#3a2a1a',
+    
+    // UI colors
+    border: '#3a3a3a',
+    borderLight: '#2d2d2d',
+    shadow: 'rgba(0, 0, 0, 0.3)',
+    shadowHover: 'rgba(0, 0, 0, 0.4)',
+    
+    // Message colors
+    userMessage: '#4a9eff',
+    assistantMessage: '#2d2d2d',
+    userText: '#ffffff',
+    assistantText: '#e0e0e0',
+    
+    // Gray colors for dark mode
+    gray50: '#2d2d2d',
+    gray100: '#3a3a3a',
+    gray200: '#4a4a4a',
+    gray300: '#5a5a5a',
+  },
+});
+
 export const globalStyles = globalCss({
   '*': {
     margin: 0,
@@ -189,6 +241,7 @@ export const globalStyles = globalCss({
     backgroundColor: '$bgSecondary',
     '-webkit-font-smoothing': 'antialiased',
     '-moz-osx-font-smoothing': 'grayscale',
+    transition: 'background-color $base, color $base',
   },
   
   'button, input, textarea': {
