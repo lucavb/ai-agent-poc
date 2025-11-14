@@ -81,17 +81,28 @@ npm run dev:frontend
 # Frontend will be available at http://localhost:5173
 ```
 
-#### Quick Development Setup
+#### Quick Development Setup (Full Stack)
+
 ```bash
 # Terminal 1: Database
 docker compose up -d
 
 # Terminal 2: API Server
 npm run dev:api
+# Wait for: "✨ Ready to accept requests!"
 
 # Terminal 3: Frontend
 npm run dev:frontend
+# Opens at http://localhost:5173
 ```
+
+**Then:**
+1. Open browser to **http://localhost:5173**
+2. See the chat interface
+3. Click an example query or type your own
+4. Chat with your database! 🎉
+
+**See:** [Chat UI Quick Start Guide](CHAT_UI_QUICKSTART.md) for detailed walkthrough
 
 ## 📦 Packages
 
@@ -118,10 +129,25 @@ TypeScript agent system using Model Context Protocol (MCP) SDK with:
 
 ### Frontend (`@ai-agent-poc/frontend`)
 
-React + TypeScript + Vite application:
-- Modern, responsive UI for chatting with the AI agent
-- Real-time database query visualization
-- Conversation history and context display
+React + TypeScript + Vite + Stitches application:
+- **Modern Chat UI**: Clean, professional design
+- **Real-time Messaging**: Send queries, see AI responses
+- **Loading Indicators**: Animated "Thinking..." with bouncing dots
+- **Context Awareness**: Follow-up questions work naturally
+- **Clear Conversation**: Button to reset chat
+- **Empty State**: Welcome screen with example queries
+- **Responsive Design**: Works on mobile and desktop
+- **Type Safety**: Full TypeScript support
+
+**Quick Start:**
+```bash
+npm run dev:frontend
+# Opens at http://localhost:5173
+```
+
+**Documentation:**
+- [Chat UI Quick Start](CHAT_UI_QUICKSTART.md) - Get started in 5 minutes
+- [Frontend Implementation Summary](FRONTEND_IMPLEMENTATION_SUMMARY.md) - Technical details
 
 ## 🛠️ Development Scripts
 
