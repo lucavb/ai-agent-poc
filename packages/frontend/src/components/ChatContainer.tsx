@@ -303,9 +303,6 @@ export function ChatContainer() {
                                 <ExampleQuery onClick={() => handleExampleQuery('Show me the database schema')}>
                                     Show me the database schema
                                 </ExampleQuery>
-                                <ExampleQuery onClick={() => handleExampleQuery('Which user has the most orders?')}>
-                                    Which user has the most orders?
-                                </ExampleQuery>
                             </ExampleQueries>
                         </EmptyState>
                     ) : (
