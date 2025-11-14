@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { styled } from '../stitches.config';
 import type { Message } from '../hooks/useChat';
 
@@ -79,11 +80,91 @@ const MessageTime = styled('div', {
     },
 });
 
+const ThinkSection = styled('div', {
+    maxWidth: '70%',
+    marginTop: '$2',
+});
+
+const ThinkToggle = styled('button', {
+    fontSize: '$xs',
+    color: '$textSecondary',
+    backgroundColor: 'transparent',
+    border: 'none',
+    padding: '$1 $2',
+    borderRadius: '$sm',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '$1',
+    fontWeight: '$medium',
+    transition: 'background-color 0.2s ease',
+
+    '&:hover': {
+        backgroundColor: '$gray100',
+    },
+
+    '&:focus': {
+        outline: '2px solid $primary',
+        outlineOffset: '2px',
+    },
+});
+
+const ThinkContent = styled('div', {
+    fontSize: '$sm',
+    color: '$textSecondary',
+    backgroundColor: '$gray50',
+    border: '1px solid $border',
+    borderRadius: '$md',
+    padding: '$2 $3',
+    marginTop: '$1',
+    lineHeight: '$relaxed',
+    whiteSpace: 'pre-wrap',
+    fontStyle: 'italic',
+});
+
+const ThinkIcon = styled('span', {
+    fontSize: '$xs',
+    transition: 'transform 0.2s ease',
+    
+    variants: {
+        isOpen: {
+            true: {
+                transform: 'rotate(90deg)',
+            },
+            false: {
+                transform: 'rotate(0deg)',
+            },
+        },
+    },
+});
+
 interface ChatMessageProps {
     message: Message;
 }
 
+/**
+ * Parses message content to extract think tags and main content
+ */
+function parseThinkTags(content: string): { mainContent: string; thinkContent: string | null } {
+    const thinkRegex = /<think>([\s\S]*?)<\/think>/g;
+    const matches = [...content.matchAll(thinkRegex)];
+    
+    if (matches.length === 0) {
+        return { mainContent: content, thinkContent: null };
+    }
+
+    // Extract all think content
+    const thinkContent = matches.map(match => match[1].trim()).join('\n\n');
+    
+    // Remove think tags from main content
+    const mainContent = content.replace(thinkRegex, '').trim();
+    
+    return { mainContent, thinkContent };
+}
+
 export function ChatMessage({ message }: ChatMessageProps) {
+    const [isThinkOpen, setIsThinkOpen] = useState(false);
+
     const formatTime = (date: Date) => {
         return new Intl.DateTimeFormat('en-US', {
             hour: 'numeric',
@@ -92,11 +173,31 @@ export function ChatMessage({ message }: ChatMessageProps) {
         }).format(date);
     };
 
+    // Parse message content to extract think tags
+    const { mainContent, thinkContent } = parseThinkTags(message.content);
+
     return (
         <MessageContainer role={message.role}>
             <MessageContent role={message.role}>
-                <MessageBubble role={message.role}>{message.content}</MessageBubble>
+                <MessageBubble role={message.role}>{mainContent}</MessageBubble>
                 <MessageTime role={message.role}>{formatTime(message.timestamp)}</MessageTime>
+                
+                {/* Show think section only for assistant messages with think content */}
+                {message.role === 'assistant' && thinkContent && (
+                    <ThinkSection>
+                        <ThinkToggle 
+                            onClick={() => setIsThinkOpen(!isThinkOpen)}
+                            aria-expanded={isThinkOpen}
+                            aria-label="Toggle reasoning"
+                        >
+                            <ThinkIcon isOpen={isThinkOpen}>▶</ThinkIcon>
+                            <span>Reasoning</span>
+                        </ThinkToggle>
+                        {isThinkOpen && (
+                            <ThinkContent>{thinkContent}</ThinkContent>
+                        )}
+                    </ThinkSection>
+                )}
             </MessageContent>
         </MessageContainer>
     );
