@@ -87,16 +87,32 @@ Always be helpful, accurate, and honest about your capabilities and limitations.
     /**
      * Process a query using AI SDK's built-in multi-step capabilities
      */
-    async processQuery(query: string): Promise<AgentResult> {
+    async processQuery(
+        query: string,
+        history?: Array<{ role: 'user' | 'assistant'; content: string }>,
+    ): Promise<AgentResult> {
         this.resetState();
 
-        // Build messages
-        const messages: CoreMessage[] = [
-            AISdkClient.createSystemMessage(this.systemPrompt),
-            AISdkClient.createUserMessage(query),
-        ];
+        // Build messages with history
+        const messages: CoreMessage[] = [AISdkClient.createSystemMessage(this.systemPrompt)];
 
-        this.state.reasoning.push('Starting query processing with AI SDK');
+        // Add conversation history if provided
+        if (history && history.length > 0) {
+            for (const msg of history) {
+                if (msg.role === 'user') {
+                    messages.push(AISdkClient.createUserMessage(msg.content));
+                } else {
+                    messages.push(AISdkClient.createAssistantMessage(msg.content));
+                }
+            }
+        }
+
+        // Add the current query
+        messages.push(AISdkClient.createUserMessage(query));
+
+        this.state.reasoning.push(
+            'Starting query processing with AI SDK' + (history ? ` (with ${history.length} history messages)` : ''),
+        );
 
         try {
             // Get tools in AI SDK format
@@ -118,7 +134,9 @@ Always be helpful, accurate, and honest about your capabilities and limitations.
                         console.log(`\n--- Step ${this.state.iterations}: ${step.stepType || 'processing'} ---`);
                         if (step.toolCalls && step.toolCalls.length > 0) {
                             console.log(
-                                `🔧 Tools: ${step.toolCalls.map((tc: any) => tc.toolName || tc.function?.name || 'unknown').join(', ')}`,
+                                `🔧 Tools: ${step.toolCalls
+                                    .map((tc: any) => tc.toolName || tc.function?.name || 'unknown')
+                                    .join(', ')}`,
                             );
                         }
                         if (step.text && step.text.length > 0) {

@@ -20,7 +20,7 @@ export class ChatController {
      */
     async chat(req: Request, res: Response): Promise<void> {
         try {
-            const { query, sessionId, options }: ChatRequest = req.body;
+            const { query, sessionId, history, options }: ChatRequest = req.body;
 
             // Generate session ID if not provided
             const actualSessionId = sessionId || uuidv4();
@@ -37,8 +37,8 @@ export class ChatController {
                 config.maxIterations = options.maxIterations;
             }
 
-            // Process the query
-            const result = await this.agent.processQuery(query);
+            // Process the query with history
+            const result = await this.agent.processQuery(query, history);
 
             // Format tool calls
             const toolCalls: ToolCallInfo[] = result.toolCalls.map((call) => ({
@@ -75,4 +75,3 @@ export class ChatController {
         }
     }
 }
-
