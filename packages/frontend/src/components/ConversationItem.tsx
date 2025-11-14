@@ -129,7 +129,7 @@ export function ConversationItem({ conversation, active, onSelect, onDelete }: C
             {conversation.lastMessage && <Preview>{conversation.lastMessage}</Preview>}
             <Meta>
                 <MessageCount>💬 {conversation.messageCount}</MessageCount>
-                <span>{formatDate(conversation.updatedAt)}</span>
+                <span>{formatDate(conversation.createdAt)}</span>
             </Meta>
             <DeleteButton onClick={handleDelete} title="Delete conversation">
                 ✕
