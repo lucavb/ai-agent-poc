@@ -1,6 +1,8 @@
 import { styled } from '../stitches.config';
 import { ConversationItem } from './ConversationItem';
 import type { ConversationSummary } from '../types/conversation';
+import YaraLogo from '../assets/Yara Logo RGB_Primary.svg';
+import NerdGroupLogo from '../assets/Sticker_TheNerdGroup.svg';
 
 const SidebarContainer = styled('div', {
   width: '300px',
@@ -35,6 +37,30 @@ const SidebarContainer = styled('div', {
 const SidebarHeader = styled('div', {
   padding: '$4',
   borderBottom: '1px solid $border',
+});
+
+const SidebarFooter = styled('div', {
+  padding: '$4',
+  borderTop: '1px solid $border',
+});
+
+const LogoContainer = styled('div', {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '$3',
+  justifyContent: 'flex-start',
+});
+
+const Logo = styled('img', {
+  height: '75px',
+  width: 'auto',
+  objectFit: 'contain',
+});
+
+const NerdGroupLogoStyled = styled('img', {
+  height: '100px',
+  width: 'auto',
+  objectFit: 'contain',
 });
 
 const NewConversationButton = styled('button', {
@@ -172,6 +198,13 @@ export function Sidebar({
             ))
           )}
         </ConversationsList>
+        
+        <SidebarFooter>
+          <LogoContainer>
+            <Logo src={YaraLogo} alt="Yara Logo" />
+            <NerdGroupLogoStyled src={NerdGroupLogo} alt="The Nerd Group" />
+          </LogoContainer>
+        </SidebarFooter>
       </SidebarContainer>
     </>
   );
