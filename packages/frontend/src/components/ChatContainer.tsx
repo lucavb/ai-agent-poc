@@ -209,12 +209,11 @@ export function ChatContainer() {
     }, [isLoaded, currentConversationId, conversationSummaries.length, createConversation]);
 
     const handleMessagesChange = useCallback(
-        (messages: any[]) => {
-            if (currentConversationId) {
-                updateConversationMessages(currentConversationId, messages);
-            }
+        (conversationId: string, messages: any[]) => {
+            // Update the specified conversation, which might not be the current one
+            updateConversationMessages(conversationId, messages);
         },
-        [currentConversationId, updateConversationMessages],
+        [updateConversationMessages],
     );
 
     const { messages, isLoading, sendMessage, clearConversation } = useChat({

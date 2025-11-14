@@ -11,7 +11,7 @@ export interface Message {
 interface UseChatOptions {
     sessionId: string;
     initialMessages?: Message[];
-    onMessagesChange?: (messages: Message[]) => void;
+    onMessagesChange?: (conversationId: string, messages: Message[]) => void;
 }
 
 export function useChat({ sessionId, initialMessages = [], onMessagesChange }: UseChatOptions) {
@@ -27,6 +27,8 @@ export function useChat({ sessionId, initialMessages = [], onMessagesChange }: U
         if (previousSessionIdRef.current !== sessionId) {
             previousSessionIdRef.current = sessionId;
             setMessages(initialMessages);
+            setIsLoading(false); // Clear loading state when switching conversations
+            setError(null); // Clear any errors when switching conversations
             // Skip the next onMessagesChange call since this is just a conversation switch
             skipNextUpdateRef.current = true;
         }
@@ -41,13 +43,16 @@ export function useChat({ sessionId, initialMessages = [], onMessagesChange }: U
         }
 
         if (onMessagesChange) {
-            onMessagesChange(messages);
+            onMessagesChange(sessionId, messages);
         }
-    }, [messages, onMessagesChange]);
+    }, [messages, onMessagesChange, sessionId]);
 
     const sendMessage = useCallback(
         async (content: string) => {
             if (!content.trim() || isLoading) return;
+
+            // Capture the sessionId at the time of sending to detect conversation switches
+            const messageSessionId = sessionId;
 
             // Add user message immediately
             const userMessage: Message = {
@@ -61,9 +66,16 @@ export function useChat({ sessionId, initialMessages = [], onMessagesChange }: U
             setIsLoading(true);
             setError(null);
 
+            // Capture the messages at send time (including the user message we just added)
+            let messagesAtSendTime: Message[] = [];
+            setMessages((prev) => {
+                messagesAtSendTime = prev;
+                return prev;
+            });
+
             try {
                 // Send to API
-                const response: ChatResponse = await sendChatMessage(content.trim(), sessionId);
+                const response: ChatResponse = await sendChatMessage(content.trim(), messageSessionId);
 
                 // Add assistant response
                 const assistantMessage: Message = {
@@ -73,25 +85,43 @@ export function useChat({ sessionId, initialMessages = [], onMessagesChange }: U
                     timestamp: new Date(response.timestamp),
                 };
 
-                setMessages((prev) => [...prev, assistantMessage]);
+                if (previousSessionIdRef.current === messageSessionId) {
+                    // Still in the same conversation - update local state
+                    setMessages((prev) => [...prev, assistantMessage]);
+                } else {
+                    // Conversation was switched - save response to the original conversation in the background
+                    const updatedMessages = [...messagesAtSendTime, assistantMessage];
+                    if (onMessagesChange) {
+                        onMessagesChange(messageSessionId, updatedMessages);
+                    }
+                }
             } catch (err) {
-                const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
-                setError(errorMessage);
+                // Only show error if we're still in the same conversation
+                if (previousSessionIdRef.current === messageSessionId) {
+                    const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
+                    setError(errorMessage);
 
-                // Add error message
-                const errorMsg: Message = {
-                    id: `error-${Date.now()}`,
-                    role: 'assistant',
-                    content: `Sorry, I encountered an error: ${errorMessage}`,
-                    timestamp: new Date(),
-                };
+                    // Add error message
+                    const errorMsg: Message = {
+                        id: `error-${Date.now()}`,
+                        role: 'assistant',
+                        content: `Sorry, I encountered an error: ${errorMessage}`,
+                        timestamp: new Date(),
+                    };
 
-                setMessages((prev) => [...prev, errorMsg]);
+                    setMessages((prev) => [...prev, errorMsg]);
+                } else {
+                    // Even if switched away, we might want to save the error to the original conversation
+                    // For now, we'll just silently discard errors for switched conversations
+                }
             } finally {
-                setIsLoading(false);
+                // Only clear loading if we're still in the same conversation
+                if (previousSessionIdRef.current === messageSessionId) {
+                    setIsLoading(false);
+                }
             }
         },
-        [sessionId, isLoading],
+        [sessionId, isLoading, onMessagesChange],
     );
 
     const clearConversation = useCallback(async () => {
