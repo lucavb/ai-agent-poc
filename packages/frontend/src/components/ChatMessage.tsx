@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { styled } from '../stitches.config';
 import type { Message } from '../hooks/useChat';
 
@@ -43,7 +45,6 @@ const MessageBubble = styled('div', {
     lineHeight: '$relaxed',
     overflowWrap: 'break-word',
     wordBreak: 'normal',
-    whiteSpace: 'pre-wrap',
 
     variants: {
         role: {
@@ -59,6 +60,105 @@ const MessageBubble = styled('div', {
                 borderBottomLeftRadius: '$sm',
             },
         },
+    },
+
+    // Markdown styling
+    '& p': {
+        margin: '0 0 $2 0',
+        '&:last-child': {
+            marginBottom: 0,
+        },
+    },
+
+    '& h1, & h2, & h3, & h4, & h5, & h6': {
+        marginTop: '$3',
+        marginBottom: '$2',
+        fontWeight: '$semibold',
+        '&:first-child': {
+            marginTop: 0,
+        },
+    },
+
+    '& h1': { fontSize: '$2xl' },
+    '& h2': { fontSize: '$xl' },
+    '& h3': { fontSize: '$lg' },
+    '& h4': { fontSize: '$base' },
+
+    '& ul, & ol': {
+        marginLeft: '$4',
+        marginBottom: '$2',
+        paddingLeft: '$2',
+    },
+
+    '& li': {
+        marginBottom: '$1',
+    },
+
+    '& code': {
+        backgroundColor: '$gray100',
+        padding: '2px 6px',
+        borderRadius: '$sm',
+        fontSize: '$sm',
+        fontFamily: 'monospace',
+    },
+
+    '& pre': {
+        backgroundColor: '$gray100',
+        padding: '$3',
+        borderRadius: '$md',
+        overflow: 'auto',
+        marginBottom: '$2',
+        '& code': {
+            backgroundColor: 'transparent',
+            padding: 0,
+        },
+    },
+
+    '& blockquote': {
+        borderLeft: '3px solid $gray300',
+        paddingLeft: '$3',
+        marginLeft: 0,
+        marginBottom: '$2',
+        color: '$textSecondary',
+    },
+
+    '& a': {
+        color: '$primary',
+        textDecoration: 'underline',
+        '&:hover': {
+            opacity: 0.8,
+        },
+    },
+
+    '& hr': {
+        border: 'none',
+        borderTop: '1px solid $border',
+        margin: '$3 0',
+    },
+
+    '& table': {
+        width: '100%',
+        borderCollapse: 'collapse',
+        marginBottom: '$2',
+    },
+
+    '& th, & td': {
+        border: '1px solid $border',
+        padding: '$2',
+        textAlign: 'left',
+    },
+
+    '& th': {
+        backgroundColor: '$gray100',
+        fontWeight: '$semibold',
+    },
+
+    '& strong': {
+        fontWeight: '$bold',
+    },
+
+    '& em': {
+        fontStyle: 'italic',
     },
 });
 
@@ -118,14 +218,50 @@ const ThinkContent = styled('div', {
     padding: '$2 $3',
     marginTop: '$1',
     lineHeight: '$relaxed',
-    whiteSpace: 'pre-wrap',
     fontStyle: 'italic',
+
+    // Markdown styling for think content
+    '& p': {
+        margin: '0 0 $2 0',
+        '&:last-child': {
+            marginBottom: 0,
+        },
+    },
+
+    '& code': {
+        backgroundColor: '$gray200',
+        padding: '2px 4px',
+        borderRadius: '$sm',
+        fontSize: '$xs',
+        fontFamily: 'monospace',
+    },
+
+    '& pre': {
+        backgroundColor: '$gray200',
+        padding: '$2',
+        borderRadius: '$sm',
+        overflow: 'auto',
+        marginBottom: '$2',
+        '& code': {
+            backgroundColor: 'transparent',
+            padding: 0,
+        },
+    },
+
+    '& ul, & ol': {
+        marginLeft: '$3',
+        paddingLeft: '$2',
+    },
+
+    '& strong': {
+        fontWeight: '$semibold',
+    },
 });
 
 const ThinkIcon = styled('span', {
     fontSize: '$xs',
     transition: 'transform 0.2s ease',
-    
+
     variants: {
         isOpen: {
             true: {
@@ -148,17 +284,17 @@ interface ChatMessageProps {
 function parseThinkTags(content: string): { mainContent: string; thinkContent: string | null } {
     const thinkRegex = /<think>([\s\S]*?)<\/think>/g;
     const matches = [...content.matchAll(thinkRegex)];
-    
+
     if (matches.length === 0) {
         return { mainContent: content, thinkContent: null };
     }
 
     // Extract all think content
-    const thinkContent = matches.map(match => match[1].trim()).join('\n\n');
-    
+    const thinkContent = matches.map((match) => match[1].trim()).join('\n\n');
+
     // Remove think tags from main content
     const mainContent = content.replace(thinkRegex, '').trim();
-    
+
     return { mainContent, thinkContent };
 }
 
@@ -179,13 +315,15 @@ export function ChatMessage({ message }: ChatMessageProps) {
     return (
         <MessageContainer role={message.role}>
             <MessageContent role={message.role}>
-                <MessageBubble role={message.role}>{mainContent}</MessageBubble>
+                <MessageBubble role={message.role}>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{mainContent}</ReactMarkdown>
+                </MessageBubble>
                 <MessageTime role={message.role}>{formatTime(message.timestamp)}</MessageTime>
-                
+
                 {/* Show think section only for assistant messages with think content */}
                 {message.role === 'assistant' && thinkContent && (
                     <ThinkSection>
-                        <ThinkToggle 
+                        <ThinkToggle
                             onClick={() => setIsThinkOpen(!isThinkOpen)}
                             aria-expanded={isThinkOpen}
                             aria-label="Toggle reasoning"
@@ -194,7 +332,9 @@ export function ChatMessage({ message }: ChatMessageProps) {
                             <span>Reasoning</span>
                         </ThinkToggle>
                         {isThinkOpen && (
-                            <ThinkContent>{thinkContent}</ThinkContent>
+                            <ThinkContent>
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{thinkContent}</ReactMarkdown>
+                            </ThinkContent>
                         )}
                     </ThinkSection>
                 )}
