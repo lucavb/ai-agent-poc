@@ -1,18 +1,36 @@
 import { z } from 'zod';
 import { Client } from 'pg';
 import { createAiSdkTool } from '../ai-sdk-tool-system';
-import { getPostgresConfig } from '../config';
+import { getDatabaseConfig, getAvailableDatabaseNames } from '../config';
 import { contextManager } from '../context-manager';
 
-// Schema for PostgreSQL connection parameters (all optional, will use env vars as defaults)
-const postgresConnectionSchema = z.object({
-    host: z.string().optional().describe('PostgreSQL server hostname or IP address (uses POSTGRES_HOST from env)'),
-    port: z.number().optional().describe('PostgreSQL server port (uses POSTGRES_PORT from env)'),
-    database: z.string().optional().describe('Database name to connect to (uses POSTGRES_DB from env)'),
-    username: z.string().optional().describe('Username for database authentication (uses POSTGRES_USER from env)'),
-    password: z.string().optional().describe('Password for database authentication (uses POSTGRES_PASSWORD from env)'),
-    ssl: z.boolean().optional().describe('Whether to use SSL connection (uses POSTGRES_SSL from env)')
-});
+// Dynamically create schema based on available databases
+function createPostgresConnectionSchema() {
+    const availableDatabases = getAvailableDatabaseNames();
+    if (availableDatabases.length === 0) {
+        throw new Error('No databases are configured. Please configure at least one database in environment variables.');
+    }
+    
+    // Ensure enum has at least one element for TypeScript
+    const enumValues: [string, ...string[]] = availableDatabases.length > 0
+        ? availableDatabases as [string, ...string[]]
+        : ['core-service'];
+    
+    return z.object({
+        database_source: z.enum(enumValues).describe(
+            `Which database to use. Available databases: ${availableDatabases.join(', ')}. All databases are equivalent.`
+        ),
+        host: z.string().optional().describe('PostgreSQL server hostname or IP address (overrides environment variable)'),
+        port: z.number().optional().describe('PostgreSQL server port (overrides environment variable)'),
+        database: z.string().optional().describe('Database name to connect to (overrides environment variable)'),
+        username: z.string().optional().describe('Username for database authentication (overrides environment variable)'),
+        password: z.string().optional().describe('Password for database authentication (overrides environment variable)'),
+        ssl: z.boolean().optional().describe('Whether to use SSL connection (overrides environment variable)')
+    });
+}
+
+// Create schema instance
+const postgresConnectionSchema = createPostgresConnectionSchema();
 
 // Schema for table information
 const tableInfoSchema = z.object({
@@ -32,8 +50,8 @@ const tableInfoSchema = z.object({
 
 // Main function to get database schema
 async function getDatabaseSchema(params: z.infer<typeof postgresConnectionSchema>) {
-    // Get configuration from environment variables
-    const envConfig = getPostgresConfig();
+    // Get configuration for the specified database source
+    const envConfig = getDatabaseConfig(params.database_source);
     
     // Use provided parameters or fall back to environment configuration
     const config = {
@@ -130,6 +148,7 @@ async function getDatabaseSchema(params: z.infer<typeof postgresConnectionSchema
         return {
             success: true,
             database: config.database,
+            database_source: params.database_source,
             host: config.host,
             context_id: contextId,
             total_tables: tablesList.length,
@@ -145,7 +164,7 @@ async function getDatabaseSchema(params: z.infer<typeof postgresConnectionSchema
 
 export const postgresSchemaTool = createAiSdkTool(
     'postgres_schema',
-    'Connect to PostgreSQL database and fetch complete schema information including all tables and their columns. Uses environment variables for connection if no parameters provided.',
+    `Connect to PostgreSQL database and fetch complete schema information including all tables and their columns. Use database_source parameter to specify which database to query. Available databases are dynamically discovered from environment variables. All databases are equivalent. Uses environment variables for connection if no parameters provided.`,
     postgresConnectionSchema,
     getDatabaseSchema
 ); 

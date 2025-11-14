@@ -52,25 +52,85 @@ const EnvSchema = z.object({
         .default('false')
         .transform((val) => val.toLowerCase() === 'true'),
 
-    // PostgreSQL Configuration
-    POSTGRES_HOST: z.string().default('localhost'),
+    // PostgreSQL Core Service Database Configuration (new naming)
+    POSTGRES_CORE_SERVICE_HOST: z.string().optional(),
+    POSTGRES_CORE_SERVICE_PORT: z
+        .string()
+        .optional()
+        .transform((val) => val ? parseInt(val, 10) : undefined)
+        .refine((val) => val === undefined || (val > 0 && val <= 65535), 'Must be a valid port number'),
+    POSTGRES_CORE_SERVICE_DB: z.string().optional(),
+    POSTGRES_CORE_SERVICE_USER: z.string().optional(),
+    POSTGRES_CORE_SERVICE_PASSWORD: z.string().optional(),
+    POSTGRES_CORE_SERVICE_SSL: z
+        .string()
+        .optional()
+        .transform((val) => val ? val.toLowerCase() === 'true' : undefined),
+    POSTGRES_CORE_SERVICE_MAX_RETRIES: z
+        .string()
+        .optional()
+        .transform((val) => val ? parseInt(val, 10) : undefined)
+        .refine((val) => val === undefined || (val >= 0 && val <= 10), 'Must be between 0 and 10'),
+
+    // PostgreSQL External Partner Service Database Configuration (new naming)
+    POSTGRES_EXTERNAL_PARTNER_SERVICE_HOST: z.string().optional(),
+    POSTGRES_EXTERNAL_PARTNER_SERVICE_PORT: z
+        .string()
+        .optional()
+        .transform((val) => val ? parseInt(val, 10) : undefined)
+        .refine((val) => val === undefined || (val > 0 && val <= 65535), 'Must be a valid port number'),
+    POSTGRES_EXTERNAL_PARTNER_SERVICE_DB: z.string().optional(),
+    POSTGRES_EXTERNAL_PARTNER_SERVICE_USER: z.string().optional(),
+    POSTGRES_EXTERNAL_PARTNER_SERVICE_PASSWORD: z.string().optional(),
+    POSTGRES_EXTERNAL_PARTNER_SERVICE_SSL: z
+        .string()
+        .optional()
+        .transform((val) => val ? val.toLowerCase() === 'true' : undefined),
+    POSTGRES_EXTERNAL_PARTNER_SERVICE_MAX_RETRIES: z
+        .string()
+        .optional()
+        .transform((val) => val ? parseInt(val, 10) : undefined)
+        .refine((val) => val === undefined || (val >= 0 && val <= 10), 'Must be between 0 and 10'),
+
+    // Legacy PostgreSQL Core Service Database Configuration (backward compatibility)
+    POSTGRES_HOST: z.string().optional(),
     POSTGRES_PORT: z
         .string()
-        .default('5432')
-        .transform((val) => parseInt(val, 10))
-        .refine((val) => val > 0 && val <= 65535, 'Must be a valid port number'),
-    POSTGRES_DB: z.string().default('testdb'),
-    POSTGRES_USER: z.string().default('testuser'),
-    POSTGRES_PASSWORD: z.string().default('testpass'),
+        .optional()
+        .transform((val) => val ? parseInt(val, 10) : undefined)
+        .refine((val) => val === undefined || (val > 0 && val <= 65535), 'Must be a valid port number'),
+    POSTGRES_DB: z.string().optional(),
+    POSTGRES_USER: z.string().optional(),
+    POSTGRES_PASSWORD: z.string().optional(),
     POSTGRES_SSL: z
         .string()
-        .default('false')
-        .transform((val) => val.toLowerCase() === 'true'),
+        .optional()
+        .transform((val) => val ? val.toLowerCase() === 'true' : undefined),
     POSTGRES_MAX_RETRIES: z
         .string()
-        .default('3')
-        .transform((val) => parseInt(val, 10))
-        .refine((val) => val >= 0 && val <= 10, 'Must be between 0 and 10'),
+        .optional()
+        .transform((val) => val ? parseInt(val, 10) : undefined)
+        .refine((val) => val === undefined || (val >= 0 && val <= 10), 'Must be between 0 and 10'),
+
+    // Legacy PostgreSQL External Partner Service Database Configuration (backward compatibility)
+    POSTGRES2_HOST: z.string().optional(),
+    POSTGRES2_PORT: z
+        .string()
+        .optional()
+        .transform((val) => val ? parseInt(val, 10) : undefined)
+        .refine((val) => val === undefined || (val > 0 && val <= 65535), 'Must be a valid port number'),
+    POSTGRES2_DB: z.string().optional(),
+    POSTGRES2_USER: z.string().optional(),
+    POSTGRES2_PASSWORD: z.string().optional(),
+    POSTGRES2_SSL: z
+        .string()
+        .optional()
+        .transform((val) => val ? val.toLowerCase() === 'true' : undefined),
+    POSTGRES2_MAX_RETRIES: z
+        .string()
+        .optional()
+        .transform((val) => val ? parseInt(val, 10) : undefined)
+        .refine((val) => val === undefined || (val >= 0 && val <= 10), 'Must be between 0 and 10'),
 });
 
 // Parse and validate environment variables
@@ -143,18 +203,160 @@ export function validateEnvironment(): { valid: boolean; errors: string[] } {
 }
 
 /**
- * Get PostgreSQL configuration from environment variables
+ * Database registry - stores all configured databases
  */
-export function getPostgresConfig(): PostgresConfig {
-    return {
-        host: envVars.POSTGRES_HOST,
-        port: envVars.POSTGRES_PORT,
-        database: envVars.POSTGRES_DB,
-        username: envVars.POSTGRES_USER,
-        password: envVars.POSTGRES_PASSWORD,
-        ssl: envVars.POSTGRES_SSL,
-        maxRetries: envVars.POSTGRES_MAX_RETRIES,
+type DatabaseRegistry = Map<string, PostgresConfig>;
+
+/**
+ * Build database registry from environment variables
+ * Discovers databases from POSTGRES_<NAME>_* patterns
+ * Supports both new naming (POSTGRES_CORE_SERVICE_*) and legacy naming (POSTGRES_*, POSTGRES2_*)
+ */
+function buildDatabaseRegistry(): DatabaseRegistry {
+    const registry = new Map<string, PostgresConfig>();
+    
+    // Helper function to get config with fallback to legacy variables
+    const getCoreServiceConfig = () => {
+        // Try new naming first, fall back to legacy
+        const host = envVars.POSTGRES_CORE_SERVICE_HOST ?? 'localhost';
+        const port = envVars.POSTGRES_CORE_SERVICE_PORT ?? 5432;
+        const database = envVars.POSTGRES_CORE_SERVICE_DB ?? 'testdb';
+        const username = envVars.POSTGRES_CORE_SERVICE_USER ?? 'testuser';
+        const password = envVars.POSTGRES_CORE_SERVICE_PASSWORD ?? 'testpass';
+        const ssl = envVars.POSTGRES_CORE_SERVICE_SSL ?? false;
+        const maxRetries = envVars.POSTGRES_CORE_SERVICE_MAX_RETRIES ?? 3;
+        
+        return { host, port, database, username, password, ssl, maxRetries };
     };
+
+        // Helper function to get config with fallback to legacy variables
+    const getExternalPartnerServiceConfig = () => {
+        // Try new naming first, fall back to legacy
+        const host = envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_HOST ?? 'localhost';
+        const port = envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_PORT ?? 5432;
+        const database = envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_DB ?? 'testdb';
+        const username = envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_USER ?? 'testuser';
+        const password = envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_PASSWORD ?? 'testpass';
+        const ssl = envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_SSL ?? false;
+        const maxRetries = envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_MAX_RETRIES ?? 3;
+        
+        return { host, port, database, username, password, ssl, maxRetries };
+    };
+    
+    // Add core-service database
+    registry.set('core-service', getCoreServiceConfig());
+    
+    // Add external-partner-service database (try new naming first, fall back to legacy)
+    const externalPartnerHost = envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_HOST ?? envVars.POSTGRES2_HOST;
+    const externalPartnerDb = envVars.POSTGRES_EXTERNAL_PARTNER_SERVICE_DB ?? envVars.POSTGRES2_DB;
+    
+    if (externalPartnerHost && externalPartnerDb) {
+        registry.set('external-partner-service', getExternalPartnerServiceConfig());
+    }
+    
+    // Discover additional databases from environment variables
+    // Pattern: POSTGRES_<NAME>_HOST, POSTGRES_<NAME>_DB, etc.
+    // Skip CORE_SERVICE and EXTERNAL_PARTNER_SERVICE as they're already registered
+    const dbNamePattern = /^POSTGRES_([A-Z0-9_]+)_HOST$/i;
+    const coreConfig = getCoreServiceConfig();
+    
+    for (const [key, value] of Object.entries(process.env)) {
+        const match = key.match(dbNamePattern);
+        if (match && value) {
+            const nameUpper = match[1].toUpperCase();
+            const dbName = match[1].toLowerCase().replace(/_/g, '-');
+            
+            // Skip if already registered or if it's a reserved name
+            if (registry.has(dbName) || 
+                nameUpper === 'CORE_SERVICE' || 
+                nameUpper === 'EXTERNAL_PARTNER_SERVICE' ||
+                nameUpper === 'HOST' ||
+                nameUpper === '2') {
+                continue;
+            }
+            
+            const host = process.env[`POSTGRES_${nameUpper}_HOST`];
+            const db = process.env[`POSTGRES_${nameUpper}_DB`];
+            
+            if (host && db) {
+                registry.set(dbName, {
+                    host,
+                    port: parseInt(process.env[`POSTGRES_${nameUpper}_PORT`] || String(coreConfig.port), 10),
+                    database: db,
+                    username: process.env[`POSTGRES_${nameUpper}_USER`] || coreConfig.username,
+                    password: process.env[`POSTGRES_${nameUpper}_PASSWORD`] || coreConfig.password,
+                    ssl: process.env[`POSTGRES_${nameUpper}_SSL`]?.toLowerCase() === 'true' || coreConfig.ssl,
+                    maxRetries: parseInt(process.env[`POSTGRES_${nameUpper}_MAX_RETRIES`] || String(coreConfig.maxRetries), 10),
+                });
+            }
+        }
+    }
+    
+    return registry;
+}
+
+// Cache the database registry
+let databaseRegistry: DatabaseRegistry | null = null;
+
+/**
+ * Get the database registry (cached)
+ */
+function getDatabaseRegistry(): DatabaseRegistry {
+    if (!databaseRegistry) {
+        databaseRegistry = buildDatabaseRegistry();
+    }
+    return databaseRegistry;
+}
+
+/**
+ * Get all available database names
+ */
+export function getAvailableDatabaseNames(): string[] {
+    return Array.from(getDatabaseRegistry().keys());
+}
+
+/**
+ * Get all database configurations
+ */
+export function getAllDatabaseConfigs(): Record<string, PostgresConfig> {
+    const registry = getDatabaseRegistry();
+    const result: Record<string, PostgresConfig> = {};
+    for (const [name, config] of registry.entries()) {
+        result[name] = config;
+    }
+    return result;
+}
+
+/**
+ * Get PostgreSQL configuration by database source name
+ * @param databaseSource - name of the database (e.g., 'core-service', 'external-partner-service')
+ */
+export function getDatabaseConfig(databaseSource: string): PostgresConfig {
+    const registry = getDatabaseRegistry();
+    const config = registry.get(databaseSource);
+    if (!config) {
+        const available = getAvailableDatabaseNames().join(', ');
+        throw new Error(`Database "${databaseSource}" is not configured. Available databases: ${available || 'none'}`);
+    }
+    return config;
+}
+
+/**
+ * Get PostgreSQL Core Service database configuration from environment variables
+ * @deprecated Use getDatabaseConfig('core-service') instead
+ */
+export function getCoreServiceConfig(): PostgresConfig {
+    return getDatabaseConfig('core-service');
+}
+
+/**
+ * Get PostgreSQL External Partner Service database configuration from environment variables
+ * Returns null if external partner service database is not configured
+ * @deprecated Use getDatabaseConfig('external-partner-service') instead
+ */
+export function getExternalPartnerServiceConfig(): PostgresConfig | null {
+    const registry = getDatabaseRegistry();
+    return registry.get('external-partner-service') || null;
 }
 
 /**
@@ -173,11 +375,21 @@ export function printConfig(): void {
     console.log(`    Version: ${envVars.AGENT_VERSION}`);
     console.log(`    Max Iterations: ${envVars.AGENT_MAX_ITERATIONS}`);
     console.log(`    Debug: ${envVars.AGENT_DEBUG}`);
-    console.log('  PostgreSQL:');
-    console.log(`    Host: ${envVars.POSTGRES_HOST}`);
-    console.log(`    Port: ${envVars.POSTGRES_PORT}`);
-    console.log(`    Database: ${envVars.POSTGRES_DB}`);
-    console.log(`    User: ${envVars.POSTGRES_USER}`);
-    console.log(`    SSL: ${envVars.POSTGRES_SSL}`);
-    console.log(`    Max Retries: ${envVars.POSTGRES_MAX_RETRIES}`);
+    const allDatabases = getAllDatabaseConfigs();
+    const dbNames = Object.keys(allDatabases);
+    
+    if (dbNames.length === 0) {
+        console.log('  PostgreSQL: No databases configured');
+    } else {
+        console.log(`  PostgreSQL (${dbNames.length} database${dbNames.length > 1 ? 's' : ''} configured):`);
+        for (const [name, config] of Object.entries(allDatabases)) {
+            console.log(`    ${name}:`);
+            console.log(`      Host: ${config.host}`);
+            console.log(`      Port: ${config.port}`);
+            console.log(`      Database: ${config.database}`);
+            console.log(`      User: ${config.username}`);
+            console.log(`      SSL: ${config.ssl}`);
+            console.log(`      Max Retries: ${config.maxRetries}`);
+        }
+    }
 }
